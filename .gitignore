@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+*.so
+.DS_Store
+.idea/
+.vscode/
+.pytest_cache/
+.mypy_cache/
+build/
+dist/
+*.egg-info/
+data/
+work_dirs/
+outputs/
+checkpoints/dinov2_converted_512x512.pth
+checkpoints/*.pth

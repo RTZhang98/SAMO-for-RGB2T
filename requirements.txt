@@ -1,0 +1,12 @@
+mmengine==0.10.7
+mmdet==3.3.0
+numpy==1.26.0
+Pillow==11.1.0
+prettytable==3.16.0
+matplotlib==3.10.7
+scipy==1.15.3
+opencv-python==4.12.0.88
+albumentations==2.0.8
+timm==1.0.21
+einops==0.8.1
+xformers==0.0.20
