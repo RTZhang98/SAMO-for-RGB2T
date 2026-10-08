@@ -4,10 +4,8 @@
 
 **Affiliations:**
 
-- <sup>1</sup> School of Information and Communication Engineering, University of Electronic Science and Technology of China, Chengdu, China (电子科技大学)
-- <sup>2</sup> School of Information and Control Engineering, Southwest University of Science and Technology, Mianyang, China (西南科技大学)
-
-<sup>*</sup> Corresponding author: Fanman Meng. Runtong Zhang is currently with Southwest University of Science and Technology and was previously with University of Electronic Science and Technology of China.
+- <sup>1</sup> School of Information and Communication Engineering, University of Electronic Science and Technology of China, Chengdu, China 
+- <sup>2</sup> School of Information and Control Engineering, Southwest University of Science and Technology, Mianyang, China 
 
 ## Overview
 
