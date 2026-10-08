@@ -13,25 +13,21 @@ Thermal imagery supports scene understanding under low illumination, fog, and sm
 
 ## Datasets
 
-**Dataset download (Google Drive): 整理中.**
+**Dataset download (Google Drive): [RTSS Target Domains](https://drive.google.com/file/d/1qmVgyf2mYjJIM2wyETS-IP14RpLusE_V/view?usp=drive_link).**
 
-The download link and preparation instructions will be added here once the data package is ready.
+Download links and preparation instructions for the thermal target domains (FMB, SCUT, and SODA) have been released.
 
-| Role | Datasets |
-|---|---|
-| RGB sources | Cityscapes, BDD100K, Mapillary |
-| Thermal evaluation domains | FMB, SCUT, SODA |
-| Auxiliary thermal references | Unlabeled LLVIP thermal images, provided through the prepared IR-StyleSet directory |
+The RTSS source domains—Cityscapes, BDD100K, and Mapillary—can be downloaded from their official websites: [Cityscapes](https://www.cityscapes-dataset.com/downloads/), [BDD100K](https://bdd-data.berkeley.edu/), and [Mapillary Vistas](https://www.mapillary.com/dataset/vistas/).
 
 ## Performance and Checkpoints
 
 All scores are mIoU (%); the average is the arithmetic mean over the three thermal evaluation domains. The following **SAMO+** results are reported in Table III of the manuscript.
 
-| RGB source | FMB | SCUT | SODA | Average | Checkpoint filename | Download (Google Drive) |
+| RGB source | FMB | SCUT | SODA | Average | Checkpoint filename | Download Link (Google Drive) |
 |---|---:|---:|---:|---:|---|---|
-| Cityscapes | 58.85 | 75.61 | 69.98 | 68.15 | `citys_samo_plus_68.15.pth` | 整理中 |
-| BDD100K | 63.24 | 74.33 | 70.45 | 69.34 | `bdd_samo_plus_69.34.pth` | 整理中 |
-| Mapillary | 63.69 | 75.45 | 72.77 | 70.64 | `map_samo_plus_70.64.pth` | 整理中 |
+| Cityscapes | 58.85 | 75.61 | 69.98 | 68.15 | `citys_samo_plus_68.15.pth` | [Download](https://drive.google.com/file/d/1eqnsZHxh3KERqQ3ZLzdE1xu0s-u8ud9a/view?usp=drive_link) |
+| BDD100K | 63.24 | 74.33 | 70.45 | 69.34 | `bdd_samo_plus_69.34.pth` | [Download](https://drive.google.com/file/d/1nDzUhzVxsm9N77KUwzNYW3yDrk1H0io4/view?usp=drive_link)  |
+| Mapillary | 63.69 | 75.45 | 72.77 | 70.64 | `map_samo_plus_70.64.pth` | [Download](https://drive.google.com/file/d/1blo04k82v-XV8oou2FjHcm1y4njrhmVH/view?usp=drive_link)  |
 
 **Evaluation protocol:** resize to 1024 × 512, sliding-window crop of 512 × 512, stride of 341 × 341, seed 3407, and no test-time augmentation. The project evaluator excludes classes with zero or NaN IoU when computing each domain's mIoU; these values use that evaluation convention.
 
