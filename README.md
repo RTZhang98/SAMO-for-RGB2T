@@ -9,8 +9,6 @@
 
 [![Overview of Spectrum-Adaptive Modulation (SAMO)](figures/overview-v10.png)](figures/overview-v10.pdf)
 
-[Download the overview PDF](figures/overview-v10.pdf).
-
 Thermal imagery supports scene understanding under low illumination, fog, and smoke, but dense thermal annotations are costly, and models trained on abundant labeled RGB images face a substantial cross-spectral discrepancy when deployed on thermal imagery. We propose **Spectrum-Adaptive Modulation (SAMO)**, which uses a small auxiliary pool of unlabeled thermal references, collected independently of the deployment target datasets, to guide feature modulation during training. Within a frozen DINOv2 backbone, SAMO decomposes RGB and reference features into low-, mid-, and high-frequency bands: low-frequency semantic decoupling (LF-SD) uses a mutual-information-driven objective to retain RGB semantics while recomposing thermal domain characteristics; mid-frequency adaptive modulation (MF-AM) injects reference-guided correlated noise; and high-frequency dynamic fusion (HF-DF) incorporates complementary thermal details. Spectrum-adaptive LoRA (SA-LoRA) integrates the processed bands for efficient adaptation with a Mask2Former segmentation head. The **SAMO+** variant further introduces a source-label-anchored semantic-sufficiency objective using class prototypes. We establish the **RGB-to-Thermal Semantic Segmentation (RTSS)** benchmark with Cityscapes, BDD100K, and Mapillary as RGB sources and FMB, SCUT, and SODA as unseen thermal evaluation domains.
 
 ## Datasets
@@ -35,31 +33,24 @@ All scores are mIoU (%); the average is the arithmetic mean over the three therm
 | BDD100K | 63.24 | 74.33 | 70.45 | 69.34 | `bdd_samo_plus_69.34.pth` | 整理中 |
 | Mapillary | 63.69 | 75.45 | 72.77 | 70.64 | `map_samo_plus_70.64.pth` | 整理中 |
 
-**Released-checkpoint reproduction:** the local evaluation records dated September 16, 2026 report the following results with the released SAMO+ v3 code and weights. These differ slightly from the manuscript results above.
-
-| RGB source | FMB | SCUT | SODA | Average |
-|---|---:|---:|---:|---:|
-| Cityscapes | 58.83 | 75.65 | 70.01 | 68.16 |
-| BDD100K | 63.28 | 74.50 | 70.46 | 69.41 |
-| Mapillary | 63.88 | 75.36 | 72.82 | 70.69 |
-
 **Evaluation protocol:** resize to 1024 × 512, sliding-window crop of 512 × 512, stride of 341 × 341, seed 3407, and no test-time augmentation. The project evaluator excludes classes with zero or NaN IoU when computing each domain's mIoU; these values use that evaluation convention.
 
 The checkpoint download links will be added individually once the Google Drive uploads are ready. Place the downloaded weights under `checkpoints/`. Evaluation also requires the converted DINOv2 backbone at `checkpoints/dinov2_converted_512x512.pth`.
-
-The scores embedded in checkpoint filenames match the manuscript averages; the reproduction table reports the averages obtained in the saved local evaluation runs.
 
 ## Citation
 
 If you find this work useful, please cite the manuscript. Publication details will be added once available.
 
 ```bibtex
-@unpublished{zhang_samo_rgb2t,
-  title  = {Spectrum-Adaptive Modulation for Generalizable {RGB}-to-Thermal Semantic Segmentation},
-  author = {Zhang, Runtong and Meng, Fanman and Qiu, Zihuan and He, Mingzhou and Zhang, Xiwei and Wu, Qingbo and Xu, Linfeng and Li, Hongliang},
-  note   = {Manuscript},
-  url    = {https://github.com/RTZhang98/SAMO-for-RGB2T}
-}
+@ARTICLE{11715954,
+  author={Zhang, Runtong and Meng, Fanman and Qiu, Zihuan and He, Mingzhou and Zhang, Xiwei and Wu, Qingbo and Xu, Linfeng and Li, Hongliang},
+  journal={IEEE Transactions on Image Processing}, 
+  title={Spectrum-Adaptive Modulation for Generalizable RGB-to-Thermal Semantic Segmentation}, 
+  year={2026},
+  volume={35},
+  number={},
+  pages={10481-10496},
+  doi={10.1109/TIP.2026.3736812}}
 ```
 
 ## Acknowledgements
