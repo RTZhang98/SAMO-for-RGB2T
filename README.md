@@ -2,8 +2,6 @@
 
 **Runtong Zhang<sup>1,2</sup>, Fanman Meng<sup>1,*</sup>, Zihuan Qiu<sup>1</sup>, Mingzhou He<sup>1</sup>, Xiwei Zhang<sup>1</sup>, Qingbo Wu<sup>1</sup>, Linfeng Xu<sup>1</sup>, Hongliang Li<sup>1</sup>**
 
-**Affiliations:**
-
 - <sup>1</sup> School of Information and Communication Engineering, University of Electronic Science and Technology of China, Chengdu, China 
 - <sup>2</sup> School of Information and Control Engineering, Southwest University of Science and Technology, Mianyang, China 
 
