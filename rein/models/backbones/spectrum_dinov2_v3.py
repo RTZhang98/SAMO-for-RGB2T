@@ -1,5 +1,3 @@
-"""DINOv2 backbone with spatially correct, sparsely inserted Spectrum v3."""
-
 from copy import deepcopy
 
 import torch
@@ -9,16 +7,8 @@ from mmseg.models.builder import BACKBONES, MODELS
 from .dino_v2 import DinoVisionTransformer
 from .utils import set_requires_grad, set_train
 
-
 @BACKBONES.register_module()
 class SpectrumDinoVisionTransformerV3(DinoVisionTransformer):
-    """Apply Spectrum v3 only after selected DINOv2 blocks.
-
-    ``adapted_layers`` contains zero-based backbone block indices.  Spectrum's
-    internal layer dimension is compact: for the default blocks
-    ``(7, 11, 15, 23)``, adapter slots ``(0, 1, 2, 3)`` are used.  This avoids
-    allocating unused LoRA parameters for the remaining 20 backbone blocks.
-    """
 
     def __init__(
         self,
@@ -66,16 +56,14 @@ class SpectrumDinoVisionTransformerV3(DinoVisionTransformer):
         patch_width = width // self.patch_size
 
         if channels != 3:
-            # Training input is interleaved as source/reference after flattening
-            # the 6-channel source-style tensor into a 3-channel image batch.
+
             tokens = self.prepare_tokens_with_masks(
                 x.reshape(-1, 3, height, width), masks
             )
             source_tokens = tokens[::2]
             reference_tokens = tokens[1::2]
         else:
-            # Keep single-image inference well-defined.  Training/validation
-            # with a thermal reference uses the branch above.
+
             source_tokens = self.prepare_tokens_with_masks(x, masks)
             reference_tokens = source_tokens.detach().clone()
 

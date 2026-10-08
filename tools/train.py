@@ -14,7 +14,6 @@ from mmengine.runner import Runner
 from mmseg.registry import RUNNERS
 import rein
 
-
 def parse_args():
     parser = argparse.ArgumentParser(description="Train a segmentor")
     parser.add_argument("--config", required=True, help="train config file path")
@@ -48,9 +47,7 @@ def parse_args():
         default="none",
         help="job launcher",
     )
-    # When using PyTorch version >= 2.0.0, the `torch.distributed.launch`
-    # will pass the `--local-rank` parameter to `tools/train.py` instead
-    # of `--local_rank`.
+
     parser.add_argument("--local_rank", "--local-rank", type=int, default=0)
     args = parser.parse_args()
     if "LOCAL_RANK" not in os.environ:
@@ -58,27 +55,23 @@ def parse_args():
 
     return args
 
-
 def main():
     args = parse_args()
 
-    # load config
     cfg = Config.fromfile(args.config)
     cfg.launcher = args.launcher
     if args.cfg_options is not None:
         cfg.merge_from_dict(args.cfg_options)
 
-    # work_dir is determined in this priority: CLI > segment in file > filename
     if args.work_dir is not None:
-        # update configs according to CLI args if args.work_dir is not None
+
         cfg.work_dir = args.work_dir
     elif cfg.get("work_dir", None) is None:
-        # use config filename as default work_dir if cfg.work_dir is None
+
         cfg.work_dir = osp.join(
             "./work_dirs", osp.splitext(osp.basename(args.config))[0]
         )
 
-    # enable automatic-mixed-precision training
     if args.amp is True:
         optim_wrapper = cfg.optim_wrapper.type
         if optim_wrapper == "AmpOptimWrapper":
@@ -95,21 +88,16 @@ def main():
             cfg.optim_wrapper.type = "AmpOptimWrapper"
             cfg.optim_wrapper.loss_scale = "dynamic"
 
-    # resume training
     cfg.resume = args.resume
 
-    # build the runner from config
     if "runner_type" not in cfg:
-        # build the default runner
+
         runner = Runner.from_cfg(cfg)
     else:
-        # build customized runner from the registry
-        # if 'runner_type' is set in the cfg
+
         runner = RUNNERS.build(cfg)
 
-    # start training
     runner.train()
-
 
 if __name__ == "__main__":
     main()

@@ -1,5 +1,3 @@
-"""Label-anchored semantic-sufficiency loss for SAMO(+)."""
-
 from __future__ import annotations
 
 from typing import Dict, Tuple
@@ -10,14 +8,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 
-
 class LabelAnchoredSemanticLoss(nn.Module):
-    """Class-balanced prototype posterior supervised by source labels.
-
-    EMA prototypes are FP32 buffers rather than trainable parameters.  At each
-    training iteration the detached class statistics update the prototypes
-    first; the posterior is then evaluated against that updated snapshot.
-    """
 
     def __init__(
         self,
@@ -107,7 +98,6 @@ class LabelAnchoredSemanticLoss(nn.Module):
     def _class_balanced_sample(
         self, features: Tensor, labels: Tensor
     ) -> Tuple[Tensor, Tensor, Tensor]:
-        """Build the paper's class-balanced feature-location set P."""
         if labels.numel() == 0:
             empty_classes = labels.new_empty((0,))
             return features, labels, empty_classes
@@ -164,8 +154,6 @@ class LabelAnchoredSemanticLoss(nn.Module):
                 torch.ones(labels.shape[0], device=labels.device, dtype=torch.float32),
             )
 
-        # Every rank executes the same two collectives, including ranks with no
-        # local valid labels, so disjoint class sets cannot deadlock DDP.
         if self._distributed_enabled():
             dist.all_reduce(class_sums, op=dist.ReduceOp.SUM)
             dist.all_reduce(class_counts, op=dist.ReduceOp.SUM)
@@ -207,7 +195,7 @@ class LabelAnchoredSemanticLoss(nn.Module):
         valid_features, valid_labels = self._align_and_flatten(s_rgb, labels)
         num_valid = valid_labels.numel()
         if num_valid == 0:
-            # DDP ranks must still join prototype-statistic collectives.
+
             if update_prototypes and self._distributed_enabled():
                 self._update_prototypes(valid_features, valid_labels)
             return s_rgb.sum() * 0.0, self._zero_diagnostics(s_rgb)

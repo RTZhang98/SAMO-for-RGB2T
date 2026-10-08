@@ -1,5 +1,3 @@
-"""Encoder-decoder loss parsing for SAMO(+) component logging."""
-
 from __future__ import annotations
 
 from collections import OrderedDict
@@ -11,16 +9,8 @@ from torch import Tensor
 from mmseg.models.segmentors.encoder_decoder import EncoderDecoder
 from mmseg.registry import MODELS
 
-
 @MODELS.register_module()
 class SAMOPlusEncoderDecoder(EncoderDecoder):
-    """Log SAMO(+) components without double-counting aggregate loss.
-
-    MMEngine normally optimizes every dictionary item whose key contains
-    ``loss``.  ``loss_sem_plus`` and ``loss_mi_plus`` are requested diagnostic
-    decompositions of ``loss_sd_plus``, so they are excluded only from the
-    optimizer sum while remaining in the normal log dictionary.
-    """
 
     _metric_only_suffixes = (
         "loss_sem_plus",

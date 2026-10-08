@@ -1,21 +1,9 @@
-"""Iteration loop for fast resume with a fresh shuffled data stream."""
-
 from mmengine.logging import print_log
 from mmengine.registry import LOOPS
 from mmengine.runner.loops import IterBasedTrainLoop
 
-
 @LOOPS.register_module()
 class FastResumeIterBasedTrainLoop(IterBasedTrainLoop):
-    """Resume iteration state without replaying prior dataloader indices.
-
-    MMEngine's standard :class:`IterBasedTrainLoop` advances the dataloader
-    ``self._iter`` times after resume.  That reproduces the exact sampler
-    position, but is unnecessarily expensive for this project's randomly
-    shuffled infinite source sampler.  This loop keeps the restored model,
-    optimizer, scheduler, message-hub, and global iteration states while
-    starting a fresh shuffled dataloader stream.
-    """
 
     def run(self):
         self.runner.call_hook("before_train")

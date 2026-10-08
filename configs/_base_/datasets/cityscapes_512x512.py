@@ -15,23 +15,13 @@ cityscapes_train_pipeline = [
     dict(type="PackSegInputs"),
 ]
 cityscapes_test_pipeline = [
-    # dict(type="LoadImageFromFile"),
-    # dict(type="LoadAnnotations"),
-    # dict(type="RGB2Gray"),
-    # dict(type="Resize", scale=(1024, 512), keep_ratio=True),
-    # dict(type="StyleResize", scale=(1024, 512), keep_ratio=True), # ours
-    # # dict(type="PhotoMetricDistortion"),
-    # dict(type="PhotoMetricDistortionWithStyle"), # ours
-    # # dict(type="ConcatStyle"), # ours
-    # dict(type="PackSegInputs"),
 
     dict(type="LoadImageFromFile"),
     dict(type="LoadStyleImageFromFile", style_folder=os.getenv("SAMO_STYLE_DIR", "data/IR-StyleSet/50")),
     dict(type="Resize", scale=(1024, 512), keep_ratio=True),
-    dict(type="StyleResize", scale=(1024, 512), keep_ratio=True), # ours
-    # dict(type="Resize", scale=(1280, 720), keep_ratio=True),
-    # dict(type="StyleResize", scale=(1280, 720), keep_ratio=True), # ours
-    dict(type="ConcatStyle"), # ours
+    dict(type="StyleResize", scale=(1024, 512), keep_ratio=True),
+
+    dict(type="ConcatStyle"),
     dict(type="LoadAnnotations"),
     dict(type="PackSegInputs"),
 ]

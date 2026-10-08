@@ -1,7 +1,10 @@
-"""Cityscapes-source SAMO(+) v3 with label-anchored semantic prototypes."""
+"""Cityscapes-source SAMO+ v3 with label-anchored semantic prototypes."""
 
 _base_ = [
-    "../spectrum_v3/citys_spectrum_v3_dinov2_mask2former_512x512_bs1x4.py"
+    "../_base_/datasets/dg_citys2thermal_512x512.py",
+    "../_base_/default_runtime.py",
+    "../_base_/models/samo_v3_dinov2_mask2former.py",
+    "../_base_/samo_v3_source_runtime.py",
 ]
 
 custom_imports = dict(
@@ -34,7 +37,10 @@ model = dict(
     ),
 )
 
-train_dataloader = dict(batch_size=4)
+train_dataloader = dict(
+    batch_size=4,
+    dataset=dict(pipeline={{_base_.train_pipeline}}),
+)
 
 param_scheduler = [
     dict(type="PolyLR", eta_min=0, power=0.9, begin=0, end=80000, by_epoch=False)

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""Verify that every released SAMO+ checkpoint matches the v3 configuration."""
 
 from __future__ import annotations
 
@@ -11,13 +10,11 @@ from pathlib import Path
 import torch
 from mmengine.config import Config
 
-
 ROOT = Path(__file__).resolve().parents[1]
 os.chdir(ROOT)
 sys.path.insert(0, str(ROOT))
 
 import rein  # noqa: E402,F401
-
 
 RELEASES = {
     "citys": "citys_samo_plus_68.15.pth",
@@ -31,12 +28,10 @@ TOKEN_KEYS = (
     "backbone.spectrum.learnable_tokens_high_a",
 )
 
-
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--checkpoint-dir", type=Path, default=ROOT / "checkpoints")
     return parser.parse_args()
-
 
 def check_release(source: str, checkpoint_dir: Path) -> None:
     config_path = ROOT / "configs" / "samo_plus_v3" / (
@@ -62,8 +57,17 @@ def check_release(source: str, checkpoint_dir: Path) -> None:
             f"{cfg.model.decode_head.samo_plus.semantic_feature_layout}"
         )
 
-    checkpoint = torch.load(checkpoint_path, map_location="cpu")
+    checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
+    if type(checkpoint) is not dict or set(checkpoint) != {"state_dict"}:
+        errors.append("expected a state_dict-only checkpoint")
     state_dict = checkpoint.get("state_dict", checkpoint)
+    if type(state_dict) is not dict or hasattr(state_dict, "_metadata"):
+        errors.append("expected a plain state_dict")
+    if not all(
+        isinstance(key, str) and type(value) is torch.Tensor and not value.__dict__
+        for key, value in state_dict.items()
+    ):
+        errors.append("state_dict must contain tensor entries without custom attributes")
     for key in TOKEN_KEYS:
         shape = tuple(state_dict[key].shape) if key in state_dict else None
         if shape != (4, 100, 16):
@@ -85,12 +89,10 @@ def check_release(source: str, checkpoint_dir: Path) -> None:
         "adapter_slots=4, layout=BDN"
     )
 
-
 def main() -> None:
     args = parse_args()
     for source in RELEASES:
         check_release(source, args.checkpoint_dir)
-
 
 if __name__ == "__main__":
     main()

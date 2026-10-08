@@ -5,11 +5,7 @@ from mmengine.logging import MMLogger
 first_set_requires_grad = True
 first_set_train = True
 
-
 def set_requires_grad(model: nn.Module, keywords: List[str]):
-    """
-    notice:key in name!
-    """
     requires_grad_names = []
     num_params = 0
     num_trainable = 0
@@ -31,7 +27,6 @@ def set_requires_grad(model: nn.Module, keywords: List[str]):
         )
         first_set_requires_grad = False
 
-
 def _set_train(model: nn.Module, keywords: List[str], prefix: str = ""):
     train_names = []
     for name, child in model.named_children():
@@ -43,11 +38,7 @@ def _set_train(model: nn.Module, keywords: List[str], prefix: str = ""):
             train_names += _set_train(child, keywords, prefix=fullname)
     return train_names
 
-
 def set_train(model: nn.Module, keywords: List[str]):
-    """
-    notice:sub name startwith key!
-    """
     model.train(False)
     train_names = _set_train(model, keywords)
     global first_set_train

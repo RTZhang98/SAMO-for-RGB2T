@@ -1,8 +1,8 @@
 crop_size = (512, 512)
-# num_classes = 19
+
 num_classes = 14
 model = dict(
-    type="EncoderDecoder",
+    type="SAMOPlusEncoderDecoder",
     data_preprocessor=dict(
         type="CustomizeSegDataPreProcessor",
         mean=[123.675, 116.28, 103.53, 123.675, 116.28, 103.53],
@@ -42,7 +42,7 @@ model = dict(
         ),
     ),
     decode_head=dict(
-        type="SpectrumMask2FormerHead",
+        type="SpectrumMask2FormerHeadPlus",
         replace_query_feat=True,
         in_channels=[1024, 1024, 1024, 1024],
         strides=[4, 8, 16, 32],
@@ -57,10 +57,10 @@ model = dict(
             num_outs=3,
             norm_cfg=dict(type="GN", num_groups=32),
             act_cfg=dict(type="ReLU"),
-            encoder=dict(  # DeformableDetrTransformerEncoder
+            encoder=dict(
                 num_layers=6,
-                layer_cfg=dict(  # DeformableDetrTransformerEncoderLayer
-                    self_attn_cfg=dict(  # MultiScaleDeformableAttention
+                layer_cfg=dict(
+                    self_attn_cfg=dict(
                         embed_dims=256,
                         num_heads=8,
                         num_levels=3,
@@ -81,20 +81,20 @@ model = dict(
                 ),
                 init_cfg=None,
             ),
-            positional_encoding=dict(  # SinePositionalEncoding
+            positional_encoding=dict(
                 num_feats=128, normalize=True
             ),
             init_cfg=None,
         ),
         enforce_decoder_input_project=False,
-        positional_encoding=dict(  # SinePositionalEncoding
+        positional_encoding=dict(
             num_feats=128, normalize=True
         ),
-        transformer_decoder=dict(  # Mask2FormerTransformerDecoder
+        transformer_decoder=dict(
             return_intermediate=True,
             num_layers=9,
-            layer_cfg=dict(  # Mask2FormerTransformerDecoderLayer
-                self_attn_cfg=dict(  # MultiheadAttention
+            layer_cfg=dict(
+                self_attn_cfg=dict(
                     embed_dims=256,
                     num_heads=8,
                     attn_drop=0.0,
@@ -102,7 +102,7 @@ model = dict(
                     dropout_layer=None,
                     batch_first=True,
                 ),
-                cross_attn_cfg=dict(  # MultiheadAttention
+                cross_attn_cfg=dict(
                     embed_dims=256,
                     num_heads=8,
                     attn_drop=0.0,
@@ -161,7 +161,7 @@ model = dict(
             sampler=dict(type="mmdet.MaskPseudoSampler"),
         ),
     ),
-    # model training and testing settings
+
     train_cfg=dict(),
     test_cfg=dict(
         mode="slide",

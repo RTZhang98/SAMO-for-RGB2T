@@ -20,7 +20,7 @@ val_dataloader = dict(
     dataset=dict(
         type="ConcatDataset",
         datasets=[
-            # {{_base_.val_cityscapes}},
+
             {{_base_.val_FMB}},
             {{_base_.val_SCUT}},
             {{_base_.val_SODA}},

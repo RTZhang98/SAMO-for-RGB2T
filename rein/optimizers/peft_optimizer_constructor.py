@@ -14,12 +14,10 @@ from mmengine.utils.dl_utils import mmcv_full_available
 from mmengine.utils.dl_utils.parrots_wrapper import _BatchNorm, _InstanceNorm
 from mmengine.optim.optimizer import DefaultOptimWrapperConstructor, OptimWrapper
 
-
 @OPTIM_WRAPPER_CONSTRUCTORS.register_module()
 class PEFTOptimWrapperConstructor(DefaultOptimWrapperConstructor):
     def __init__(self, optim_wrapper_cfg: dict, paramwise_cfg: Optional[dict] = None):
-        # assert "keywords" in optim_wrapper_cfg
-        # self.keywords = optim_wrapper_cfg.pop("keywords")
+
         super().__init__(optim_wrapper_cfg, paramwise_cfg)
 
     def add_params(
@@ -29,9 +27,9 @@ class PEFTOptimWrapperConstructor(DefaultOptimWrapperConstructor):
         prefix: str = "",
         is_dcn_module: Optional[Union[int, float]] = None,
     ) -> None:
-        # get param-wise options
+
         custom_keys = self.paramwise_cfg.get("custom_keys", {})
-        # first sort with alphabet order and then sort with reversed len of str
+
         sorted_keys = sorted(sorted(custom_keys.keys()), key=len, reverse=True)
 
         bias_lr_mult = self.paramwise_cfg.get("bias_lr_mult", None)
@@ -42,7 +40,6 @@ class PEFTOptimWrapperConstructor(DefaultOptimWrapperConstructor):
         bypass_duplicate = self.paramwise_cfg.get("bypass_duplicate", False)
         dcn_offset_lr_mult = self.paramwise_cfg.get("dcn_offset_lr_mult", None)
 
-        # special rules for norm layers and depth-wise conv layers
         is_norm = isinstance(module, (_BatchNorm, _InstanceNorm, GroupNorm, LayerNorm))
         is_dwconv = (
             isinstance(module, torch.nn.Conv2d) and module.in_channels == module.groups
@@ -64,7 +61,6 @@ class PEFTOptimWrapperConstructor(DefaultOptimWrapperConstructor):
                 params.append(param_group)
                 continue
 
-            # if the parameter match one of the custom keys, ignore other rules
             is_custom = False
             for key in sorted_keys:
                 if key in f"{prefix}.{name}":
@@ -74,14 +70,13 @@ class PEFTOptimWrapperConstructor(DefaultOptimWrapperConstructor):
                     if self.base_wd is not None:
                         decay_mult = custom_keys[key].get("decay_mult", 1.0)
                         param_group["weight_decay"] = self.base_wd * decay_mult
-                    # add custom settings to param_group
+
                     for k, v in custom_keys[key].items():
                         param_group[k] = v
                     break
 
             if not is_custom:
-                # bias_lr_mult affects all bias parameters
-                # except for norm.bias dcn.conv_offset.bias
+
                 if (
                     name == "bias"
                     and not (is_norm or is_dcn_module)
@@ -95,25 +90,24 @@ class PEFTOptimWrapperConstructor(DefaultOptimWrapperConstructor):
                     and dcn_offset_lr_mult is not None
                     and isinstance(module, torch.nn.Conv2d)
                 ):
-                    # deal with both dcn_offset's bias & weight
+
                     param_group["lr"] = self.base_lr * dcn_offset_lr_mult
 
-                # apply weight decay policies
                 if self.base_wd is not None:
-                    # norm decay
+
                     if is_norm and norm_decay_mult is not None:
                         param_group["weight_decay"] = self.base_wd * norm_decay_mult
-                    # bias lr and decay
+
                     elif (
                         name == "bias"
                         and not is_dcn_module
                         and bias_decay_mult is not None
                     ):
                         param_group["weight_decay"] = self.base_wd * bias_decay_mult
-                    # depth-wise conv
+
                     elif is_dwconv and dwconv_decay_mult is not None:
                         param_group["weight_decay"] = self.base_wd * dwconv_decay_mult
-                    # flatten parameters except dcn offset
+
                     elif (
                         param.ndim == 1
                         and not is_dcn_module
@@ -154,12 +148,12 @@ class PEFTOptimWrapperConstructor(DefaultOptimWrapperConstructor):
         optim_wrapper_cfg = self.optim_wrapper_cfg.copy()
         optim_wrapper_cfg.setdefault("type", "OptimWrapper")
         optimizer_cfg = self.optimizer_cfg.copy()
-        # if no paramwise option is specified, just use the global setting
+
         if not self.paramwise_cfg:
             optimizer_cfg["params"] = model.parameters()
             optimizer = OPTIMIZERS.build(optimizer_cfg)
         else:
-            # set param-wise lr and weight decay recursively
+
             params: List = []
             self.add_params(params, model)
             optimizer_cfg["params"] = params

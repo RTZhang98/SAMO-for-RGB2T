@@ -2,7 +2,6 @@
 
 import os
 
-
 train_pipeline = [
     dict(type="LoadImageFromFile"),
     dict(

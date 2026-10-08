@@ -12,7 +12,6 @@ from mmseg.evaluation.metrics.iou_metric import IoUMetric
 from collections import defaultdict
 import math
 
-
 @METRICS.register_module()
 class DGIoUMetric(IoUMetric):
     def __init__(self, dataset_keys=[], mean_used_keys=[], **kwargs):
@@ -24,19 +23,10 @@ class DGIoUMetric(IoUMetric):
             self.mean_used_keys = dataset_keys
 
     def process(self, data_batch: dict, data_samples: Sequence[dict]) -> None:
-        """Process one batch of data and data_samples.
-
-        The processed results should be stored in ``self.results``, which will
-        be used to compute the metrics when all batches have been processed.
-
-        Args:
-            data_batch (dict): A batch of data from the dataloader.
-            data_samples (Sequence[dict]): A batch of outputs from the model.
-        """
         num_classes = len(self.dataset_meta["classes"])
         for data_sample in data_samples:
             pred_label = data_sample["pred_sem_seg"]["data"].squeeze()
-            # format_only always for test dataset without ground truth
+
             if not self.format_only:
                 label = data_sample["gt_sem_seg"]["data"].squeeze().to(pred_label)
                 res1, res2, res3, res4 = self.intersect_and_union(
@@ -48,31 +38,18 @@ class DGIoUMetric(IoUMetric):
                         dataset_key = key
                         break
                 self.results.append([dataset_key, res1, res2, res3, res4])
-            # format_result
+
             if self.output_dir is not None:
                 basename = osp.splitext(osp.basename(data_sample["img_path"]))[0]
                 png_filename = osp.abspath(osp.join(self.output_dir, f"{basename}.png"))
                 output_mask = pred_label.cpu().numpy()
-                # The index range of official ADE20k dataset is from 0 to 150.
-                # But the index range of output is from 0 to 149.
-                # That is because we set reduce_zero_label=True.
+
                 if data_sample.get("reduce_zero_label", False):
                     output_mask = output_mask + 1
                 output = Image.fromarray(output_mask.astype(np.uint8))
                 output.save(png_filename)
 
     def compute_metrics(self, results: list) -> Dict[str, float]:
-        """Compute the metrics from processed results.
-
-        Args:
-            results (list): The processed results of each batch.
-
-        Returns:
-            Dict[str, float]: The computed metrics. The keys are the names of
-                the metrics, and the values are corresponding results. The key
-                mainly includes aAcc, mIoU, mAcc, mDice, mFscore, mPrecision,
-                mRecall.
-        """
         dataset_results = defaultdict(list)
         metrics = {}
         for result in results:
@@ -102,19 +79,10 @@ class DGIoUMetricThermal(IoUMetric):
             self.mean_used_keys = dataset_keys
 
     def process(self, data_batch: dict, data_samples: Sequence[dict]) -> None:
-        """Process one batch of data and data_samples.
-
-        The processed results should be stored in ``self.results``, which will
-        be used to compute the metrics when all batches have been processed.
-
-        Args:
-            data_batch (dict): A batch of data from the dataloader.
-            data_samples (Sequence[dict]): A batch of outputs from the model.
-        """
         num_classes = len(self.dataset_meta["classes"])
         for data_sample in data_samples:
             pred_label = data_sample["pred_sem_seg"]["data"].squeeze()
-            # format_only always for test dataset without ground truth
+
             if not self.format_only:
                 label = data_sample["gt_sem_seg"]["data"].squeeze().to(pred_label)
                 res1, res2, res3, res4 = self.intersect_and_union(
@@ -126,36 +94,23 @@ class DGIoUMetricThermal(IoUMetric):
                         dataset_key = key
                         break
                 self.results.append([dataset_key, res1, res2, res3, res4])
-            # format_result
+
             if self.output_dir is not None:
                 basename = osp.splitext(osp.basename(data_sample["img_path"]))[0]
                 png_filename = osp.abspath(osp.join(self.output_dir, f"{basename}.png"))
                 output_mask = pred_label.cpu().numpy()
-                # The index range of official ADE20k dataset is from 0 to 150.
-                # But the index range of output is from 0 to 149.
-                # That is because we set reduce_zero_label=True.
+
                 if data_sample.get("reduce_zero_label", False):
                     output_mask = output_mask + 1
                 output = Image.fromarray(output_mask.astype(np.uint8))
                 output.save(png_filename)
 
     def compute_metrics_origin(self, results: list) -> Dict[str, float]:
-        """Compute the metrics from processed results.
-
-        Args:
-            results (list): The processed results of each batch.
-
-        Returns:
-            Dict[str, float]: The computed metrics. The keys are the names of
-                the metrics, and the values are corresponding results. The key
-                mainly includes aAcc, mIoU, mAcc, mDice, mFscore, mPrecision,
-                mRecall.
-        """
         logger: MMLogger = MMLogger.get_current_instance()
         if self.format_only:
             logger.info(f'results are saved to {osp.dirname(self.output_dir)}')
             return OrderedDict()
-        # convert list of tuples to tuple of lists
+
         results = tuple(zip(*results))
         assert len(results) == 4
 
@@ -169,11 +124,10 @@ class DGIoUMetricThermal(IoUMetric):
 
         class_names = self.dataset_meta['classes']
 
-        # summary table (mean, skip 0 and nan)
         def safe_mean(arr):
             arr = np.array(arr, dtype=np.float32)
-            arr = arr[~np.isnan(arr)]  # remove nan
-            arr = arr[arr != 0]        # remove 0
+            arr = arr[~np.isnan(arr)]
+            arr = arr[arr != 0]
             if len(arr) == 0:
                 return np.nan
             return np.mean(arr)
@@ -190,7 +144,6 @@ class DGIoUMetricThermal(IoUMetric):
             else:
                 metrics['m' + key] = val
 
-        # each class table
         ret_metrics.pop('aAcc', None)
         ret_metrics_class = OrderedDict({
             ret_metric: np.round(ret_metric_value * 100, 2)
@@ -207,11 +160,7 @@ class DGIoUMetricThermal(IoUMetric):
 
         return metrics
 
-
     def compute_metrics(self, results: list) -> Dict[str, float]:
-        """Compute the metrics from processed results.
-        在求均值时，遇到0或nan会跳过，不计入均值。
-        """
         dataset_results = defaultdict(list)
         metrics = {}
         for result in results:
@@ -232,7 +181,7 @@ class DGIoUMetricThermal(IoUMetric):
                 for v in v_list
                 if not (float(v) == 0 or math.isnan(float(v)))
             ]
-            if filtered_v:  # 只有非空时才计算均值
+            if filtered_v:
                 metrics[f"mean_{k}"] = sum(filtered_v) / len(filtered_v)
             else:
                 metrics[f"mean_{k}"] = float('nan')

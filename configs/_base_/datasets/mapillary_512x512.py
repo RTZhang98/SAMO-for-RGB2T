@@ -17,8 +17,7 @@ mapillary_train_pipeline = [
 mapillary_test_pipeline = [
     dict(type="LoadImageFromFile"),
     dict(type="Resize", scale=(1024, 512), keep_ratio=True),
-    # add loading annotation after ``Resize`` because ground truth
-    # does not need to do resize data transform
+
     dict(type="LoadAnnotations"),
     dict(type="PackSegInputs"),
 ]

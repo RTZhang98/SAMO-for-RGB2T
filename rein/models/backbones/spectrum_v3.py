@@ -1,5 +1,3 @@
-"""Spatially correct SAMO v3 implementation for ViT patch tokens."""
-
 from __future__ import annotations
 
 import math
@@ -12,9 +10,7 @@ from mmseg.models.builder import MODELS
 
 from .spectrum_core import LoRASpectrumCore
 
-
 class SpatialSpectrumV3Mixin:
-    """Correct spatial FFT and frequency-delta fusion for B,N,D tokens."""
 
     @staticmethod
     def _tokens_to_spatial(tokens: Tensor) -> tuple[Tensor, int, int]:
@@ -40,12 +36,10 @@ class SpatialSpectrumV3Mixin:
 
     @staticmethod
     def _spatial_to_channel_sequence(spatial: Tensor) -> Tensor:
-        """Convert B,D,H,W to the B,D,N layout expected by LF/MF/HF modules."""
         return spatial.flatten(2).contiguous()
 
     @staticmethod
     def _channel_sequence_to_tokens(sequence: Tensor) -> Tensor:
-        """Convert processor output B,D,N back to ViT token layout B,N,D."""
         return sequence.transpose(1, 2).contiguous()
 
     def forward(
@@ -119,7 +113,6 @@ class SpatialSpectrumV3Mixin:
                 self._spatial_to_channel_sequence(reference_band)
             )
 
-        # These are the exact pre-modulation tensors in B,D,N layout.
         source_low, mid_output = self.low_component_func(
             source_bands[0], reference_bands[0]
         )
@@ -130,8 +123,6 @@ class SpatialSpectrumV3Mixin:
             source_bands[2], reference_bands[2]
         )
 
-        # forward_delta_feat consumes N,B,D.  Make both token and embedding
-        # axes explicit rather than relying on N_patch == D.
         source_tokens_nbd = patch_tokens.permute(1, 0, 2).contiguous()
         low_nbd = self._channel_sequence_to_tokens(source_low).permute(
             1, 0, 2
@@ -179,15 +170,13 @@ class SpatialSpectrumV3Mixin:
         delta_feat_mid: Tensor,
         delta_feat_high: Tensor,
     ) -> Tensor:
-        """Fuse N,B,D deltas along D and return N,B,D."""
         concatenated = torch.cat(
             (delta_feat_low, delta_feat_mid, delta_feat_high), dim=2
-        )  # N,B,3D
-        concatenated = concatenated.permute(1, 2, 0).contiguous()  # B,3D,N
-        fused = self.fusion_linear(concatenated)  # B,D,N
-        return F.relu(fused).permute(2, 0, 1).contiguous()  # N,B,D
-
+        )
+        concatenated = concatenated.permute(1, 2, 0).contiguous()
+        fused = self.fusion_linear(concatenated)
+        return F.relu(fused).permute(2, 0, 1).contiguous()
 
 @MODELS.register_module()
 class LoRASpectrumV3(SpatialSpectrumV3Mixin, LoRASpectrumCore):
-    """LoRA Spectrum with spatially correct patch-grid frequency bands."""
+    pass

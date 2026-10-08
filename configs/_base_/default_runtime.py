@@ -13,7 +13,14 @@ log_level = "INFO"
 load_from = None
 resume = False
 
-tta_model = dict(type="SegTTAModel")
 randomness = dict(
     seed=42,
+)
+
+default_hooks = dict(
+    timer=dict(type="IterTimerHook"),
+    logger=dict(type="LoggerHook", interval=50, log_metric_by_epoch=False),
+    param_scheduler=dict(type="ParamSchedulerHook"),
+    sampler_seed=dict(type="DistSamplerSeedHook"),
+    visualization=dict(type="SegVisualizationHook"),
 )

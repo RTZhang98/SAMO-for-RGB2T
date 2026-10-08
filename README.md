@@ -9,13 +9,11 @@
 
 [![Overview of Spectrum-Adaptive Modulation (SAMO)](figures/overview-v10.png)](figures/overview-v10.pdf)
 
-Thermal imagery supports scene understanding under low illumination, fog, and smoke, but dense thermal annotations are costly, and models trained on abundant labeled RGB images face a substantial cross-spectral discrepancy when deployed on thermal imagery. We propose **Spectrum-Adaptive Modulation (SAMO)**, which uses a small auxiliary pool of unlabeled thermal references, collected independently of the deployment target datasets, to guide feature modulation during training. Within a frozen DINOv2 backbone, SAMO decomposes RGB and reference features into low-, mid-, and high-frequency bands: low-frequency semantic decoupling (LF-SD) uses a mutual-information-driven objective to retain RGB semantics while recomposing thermal domain characteristics; mid-frequency adaptive modulation (MF-AM) injects reference-guided correlated noise; and high-frequency dynamic fusion (HF-DF) incorporates complementary thermal details. Spectrum-adaptive LoRA (SA-LoRA) integrates the processed bands for efficient adaptation with a Mask2Former segmentation head. The **SAMO+** variant further introduces a source-label-anchored semantic-sufficiency objective using class prototypes. We establish the **RGB-to-Thermal Semantic Segmentation (RTSS)** benchmark with Cityscapes, BDD100K, and Mapillary as RGB sources and FMB, SCUT, and SODA as unseen thermal evaluation domains.
+Official **SAMO+ (v3)** implementation for RGB-to-thermal semantic segmentation, using a DINOv2 backbone and a Mask2Former head.
 
 ## Datasets
 
 **Dataset download (Google Drive): [RTSS Target Domains](https://drive.google.com/file/d/1qmVgyf2mYjJIM2wyETS-IP14RpLusE_V/view?usp=drive_link).**
-
-Download links and preparation instructions for the thermal target domains (FMB, SCUT, and SODA) have been released.
 
 The RTSS source domains—Cityscapes, BDD100K, and Mapillary—can be downloaded from their official websites: [Cityscapes](https://www.cityscapes-dataset.com/downloads/), [BDD100K](https://bdd-data.berkeley.edu/), and [Mapillary Vistas](https://www.mapillary.com/dataset/vistas/).
 
@@ -29,13 +27,13 @@ All scores are mIoU (%); the average is the arithmetic mean over the three therm
 | BDD100K | 63.24 | 74.33 | 70.45 | 69.34 | `bdd_samo_plus_69.34.pth` | [Download](https://drive.google.com/file/d/1KBM6giHLUsLpCpeySDdngRnpQisBG9ly/view?usp=drive_link)  |
 | Mapillary | 63.69 | 75.45 | 72.77 | 70.64 | `map_samo_plus_70.64.pth` | [Download](https://drive.google.com/file/d/18sivFxdxI3dY5C4oxIBXN_7aMXS1zB80/view?usp=drive_link)  |
 
-**Evaluation protocol:** resize to 1024 × 512, sliding-window crop of 512 × 512, stride of 341 × 341, seed 3407, and no test-time augmentation. The project evaluator excludes classes with zero or NaN IoU when computing each domain's mIoU; these values use that evaluation convention.
+**Evaluation protocol:** resize to 1024 × 512, sliding-window crop of 512 × 512, stride of 341 × 341, seed 3407. The project evaluator excludes classes with zero or NaN IoU when computing each domain's mIoU; these values use that evaluation convention.
 
-The checkpoint download links will be added individually once the Google Drive uploads are ready. Place the downloaded weights under `checkpoints/`. Evaluation also requires the converted DINOv2 backbone at `checkpoints/dinov2_converted_512x512.pth`.
+Place the downloaded weights under `checkpoints/`. Evaluation also requires the converted DINOv2 backbone at `checkpoints/dinov2_converted_512x512.pth`.
 
 ## Citation
 
-If you find this work useful, please cite the manuscript. Publication details will be added once available.
+
 
 ```bibtex
 @ARTICLE{11715954,
