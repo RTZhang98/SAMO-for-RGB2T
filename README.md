@@ -23,7 +23,7 @@ The RTSS source domains—Cityscapes, BDD100K, and Mapillary—can be downloaded
 
 All scores are mIoU (%); the average is the arithmetic mean over the three thermal evaluation domains. The following **SAMO+** results are reported in Table III of the manuscript.
 
-| RGB source | FMB | SCUT | SODA | Average | Checkpoint filename | Download Link (Google Drive) |
+| RGB source | FMB | SCUT | SODA | Average | Checkpoint filename | Google Drive |
 |---|---:|---:|---:|---:|---|---|
 | Cityscapes | 58.85 | 75.61 | 69.98 | 68.15 | `citys_samo_plus_68.15.pth` | [Download](https://drive.google.com/file/d/1eqnsZHxh3KERqQ3ZLzdE1xu0s-u8ud9a/view?usp=drive_link) |
 | BDD100K | 63.24 | 74.33 | 70.45 | 69.34 | `bdd_samo_plus_69.34.pth` | [Download](https://drive.google.com/file/d/1nDzUhzVxsm9N77KUwzNYW3yDrk1H0io4/view?usp=drive_link)  |
