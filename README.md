@@ -24,7 +24,7 @@ All scores are mIoU (%); the average is the arithmetic mean over the three therm
 | RGB source | FMB | SCUT | SODA | Average | Checkpoint filename | Google Drive |
 |---|---:|---:|---:|---:|---|---|
 | Cityscapes | 58.85 | 75.61 | 69.98 | 68.15 | `citys_samo_plus_68.15.pth` | [Download](https://drive.google.com/file/d/1uualWhSpEJxQm1XjoR2TcJTqbaO3To2F/view?usp=drive_link) |
-| BDD100K | 63.24 | 74.33 | 70.45 | 69.34 | `bdd_samo_plus_69.34.pth` | [Download](https://drive.google.com/file/d/1KBM6giHLUsLpCpeySDdngRnpQisBG9ly/view?usp=drive_link)  |
+| BDD100K | 63.24 | 74.33 | 70.45 | 69.34 | `bdd_samo_plus_69.34.pth` | [Download](https://drive.google.com/file/d/1KBM6giHLUsLpaCpeySDdngRnpQisBG9ly/view?usp=drive_link)  |
 | Mapillary | 63.69 | 75.45 | 72.77 | 70.64 | `map_samo_plus_70.64.pth` | [Download](https://drive.google.com/file/d/18sivFxdxI3dY5C4oxIBXN_7aMXS1zB80/view?usp=drive_link)  |
 
 **Evaluation protocol:** resize to 1024 × 512, sliding-window crop of 512 × 512, stride of 341 × 341, seed 3407. The project evaluator excludes classes with zero or NaN IoU when computing each domain's mIoU; these values use that evaluation convention.
