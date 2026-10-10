@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 from typing import Tuple, Union
 
 import torch.nn as nn
@@ -14,17 +13,7 @@ from mmseg.utils import OptConfigType, SampleList
 
 @MODELS.register_module()
 class DDRHead(BaseDecodeHead):
-    """Decode head for DDRNet.
 
-    Args:
-        in_channels (int): Number of input channels.
-        channels (int): Number of output channels.
-        num_classes (int): Number of classes.
-        norm_cfg (dict, optional): Config dict for normalization layer.
-            Default: dict(type='BN').
-        act_cfg (dict, optional): Config dict for activation layer.
-            Default: dict(type='ReLU', inplace=True).
-    """
 
     def __init__(self,
                  in_channels: int,

@@ -1,6 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
-# Originally from https://github.com/visual-attention-network/segnext
-# Licensed under the Apache License, Version 2.0 (the "License")
 import math
 import warnings
 
@@ -16,19 +13,7 @@ from mmseg.registry import MODELS
 
 
 class Mlp(BaseModule):
-    """Multi Layer Perceptron (MLP) Module.
 
-    Args:
-        in_features (int): The dimension of input features.
-        hidden_features (int): The dimension of hidden features.
-            Defaults: None.
-        out_features (int): The dimension of output features.
-            Defaults: None.
-        act_cfg (dict): Config dict for activation layer in block.
-            Default: dict(type='GELU').
-        drop (float): The number of dropout rate in MLP block.
-            Defaults: 0.0.
-    """
 
     def __init__(self,
                  in_features,
@@ -53,7 +38,7 @@ class Mlp(BaseModule):
         self.drop = nn.Dropout(drop)
 
     def forward(self, x):
-        """Forward function."""
+
 
         x = self.fc1(x)
 
@@ -67,16 +52,7 @@ class Mlp(BaseModule):
 
 
 class StemConv(BaseModule):
-    """Stem Block at the beginning of Semantic Branch.
 
-    Args:
-        in_channels (int): The dimension of input channels.
-        out_channels (int): The dimension of output channels.
-        act_cfg (dict): Config dict for activation layer in block.
-            Default: dict(type='GELU').
-        norm_cfg (dict): Config dict for normalization layer.
-            Defaults: dict(type='SyncBN', requires_grad=True).
-    """
 
     def __init__(self,
                  in_channels,
@@ -104,7 +80,7 @@ class StemConv(BaseModule):
         )
 
     def forward(self, x):
-        """Forward function."""
+
 
         x = self.proj(x)
         _, _, H, W = x.size()
@@ -113,16 +89,7 @@ class StemConv(BaseModule):
 
 
 class MSCAAttention(BaseModule):
-    """Attention Module in Multi-Scale Convolutional Attention Module (MSCA).
 
-    Args:
-        channels (int): The dimension of channels.
-        kernel_sizes (list): The size of attention
-            kernel. Defaults: [5, [1, 7], [1, 11], [1, 21]].
-        paddings (list): The number of
-            corresponding padding value in attention module.
-            Defaults: [2, [0, 3], [0, 5], [0, 10]].
-    """
 
     def __init__(self,
                  channels,
@@ -153,13 +120,13 @@ class MSCAAttention(BaseModule):
         self.conv3 = nn.Conv2d(channels, channels, 1)
 
     def forward(self, x):
-        """Forward function."""
+
 
         u = x.clone()
 
         attn = self.conv0(x)
 
-        # Multi-Scale Feature extraction
+
         attn_0 = self.conv0_1(attn)
         attn_0 = self.conv0_2(attn_0)
 
@@ -170,29 +137,17 @@ class MSCAAttention(BaseModule):
         attn_2 = self.conv2_2(attn_2)
 
         attn = attn + attn_0 + attn_1 + attn_2
-        # Channel Mixing
+
         attn = self.conv3(attn)
 
-        # Convolutional Attention
+
         x = attn * u
 
         return x
 
 
 class MSCASpatialAttention(BaseModule):
-    """Spatial Attention Module in Multi-Scale Convolutional Attention Module
-    (MSCA).
 
-    Args:
-        in_channels (int): The dimension of channels.
-        attention_kernel_sizes (list): The size of attention
-            kernel. Defaults: [5, [1, 7], [1, 11], [1, 21]].
-        attention_kernel_paddings (list): The number of
-            corresponding padding value in attention module.
-            Defaults: [2, [0, 3], [0, 5], [0, 10]].
-        act_cfg (dict): Config dict for activation layer in block.
-            Default: dict(type='GELU').
-    """
 
     def __init__(self,
                  in_channels,
@@ -208,7 +163,7 @@ class MSCASpatialAttention(BaseModule):
         self.proj_2 = nn.Conv2d(in_channels, in_channels, 1)
 
     def forward(self, x):
-        """Forward function."""
+
 
         shorcut = x.clone()
         x = self.proj_1(x)
@@ -220,30 +175,7 @@ class MSCASpatialAttention(BaseModule):
 
 
 class MSCABlock(BaseModule):
-    """Basic Multi-Scale Convolutional Attention Block. It leverage the large-
-    kernel attention (LKA) mechanism to build both channel and spatial
-    attention. In each branch, it uses two depth-wise strip convolutions to
-    approximate standard depth-wise convolutions with large kernels. The kernel
-    size for each branch is set to 7, 11, and 21, respectively.
 
-    Args:
-        channels (int): The dimension of channels.
-        attention_kernel_sizes (list): The size of attention
-            kernel. Defaults: [5, [1, 7], [1, 11], [1, 21]].
-        attention_kernel_paddings (list): The number of
-            corresponding padding value in attention module.
-            Defaults: [2, [0, 3], [0, 5], [0, 10]].
-        mlp_ratio (float): The ratio of multiple input dimension to
-            calculate hidden feature in MLP layer. Defaults: 4.0.
-        drop (float): The number of dropout rate in MLP block.
-            Defaults: 0.0.
-        drop_path (float): The ratio of drop paths.
-            Defaults: 0.0.
-        act_cfg (dict): Config dict for activation layer in block.
-            Default: dict(type='GELU').
-        norm_cfg (dict): Config dict for normalization layer.
-            Defaults: dict(type='SyncBN', requires_grad=True).
-    """
 
     def __init__(self,
                  channels,
@@ -274,7 +206,7 @@ class MSCABlock(BaseModule):
             layer_scale_init_value * torch.ones(channels), requires_grad=True)
 
     def forward(self, x, H, W):
-        """Forward function."""
+
 
         B, N, C = x.shape
         x = x.permute(0, 2, 1).view(B, C, H, W)
@@ -289,20 +221,7 @@ class MSCABlock(BaseModule):
 
 
 class OverlapPatchEmbed(BaseModule):
-    """Image to Patch Embedding.
 
-    Args:
-        patch_size (int): The patch size.
-            Defaults: 7.
-        stride (int): Stride of the convolutional layer.
-            Default: 4.
-        in_channels (int): The number of input channels.
-            Defaults: 3.
-        embed_dims (int): The dimensions of embedding.
-            Defaults: 768.
-        norm_cfg (dict): Config dict for normalization layer.
-            Defaults: dict(type='SyncBN', requires_grad=True).
-    """
 
     def __init__(self,
                  patch_size=7,
@@ -321,7 +240,7 @@ class OverlapPatchEmbed(BaseModule):
         self.norm = build_norm_layer(norm_cfg, embed_dim)[1]
 
     def forward(self, x):
-        """Forward function."""
+
 
         x = self.proj(x)
         _, _, H, W = x.shape
@@ -334,37 +253,7 @@ class OverlapPatchEmbed(BaseModule):
 
 @MODELS.register_module()
 class MSCAN(BaseModule):
-    """SegNeXt Multi-Scale Convolutional Attention Network (MCSAN) backbone.
 
-    This backbone is the implementation of `SegNeXt: Rethinking
-    Convolutional Attention Design for Semantic
-    Segmentation <https://arxiv.org/abs/2209.08575>`_.
-    Inspiration from https://github.com/visual-attention-network/segnext.
-
-    Args:
-        in_channels (int): The number of input channels. Defaults: 3.
-        embed_dims (list[int]): Embedding dimension.
-            Defaults: [64, 128, 256, 512].
-        mlp_ratios (list[int]): Ratio of mlp hidden dim to embedding dim.
-            Defaults: [4, 4, 4, 4].
-        drop_rate (float): Dropout rate. Defaults: 0.
-        drop_path_rate (float): Stochastic depth rate. Defaults: 0.
-        depths (list[int]): Depths of each Swin Transformer stage.
-            Default: [3, 4, 6, 3].
-        num_stages (int): MSCAN stages. Default: 4.
-        attention_kernel_sizes (list): Size of attention kernel in
-            Attention Module (Figure 2(b) of original paper).
-            Defaults: [5, [1, 7], [1, 11], [1, 21]].
-        attention_kernel_paddings (list): Size of attention paddings
-            in Attention Module (Figure 2(b) of original paper).
-            Defaults: [2, [0, 3], [0, 5], [0, 10]].
-        norm_cfg (dict): Config of norm layers.
-            Defaults: dict(type='SyncBN', requires_grad=True).
-        pretrained (str, optional): model pretrained path.
-            Default: None.
-        init_cfg (dict or list[dict], optional): Initialization config dict.
-            Default: None.
-    """
 
     def __init__(self,
                  in_channels=3,
@@ -396,7 +285,7 @@ class MSCAN(BaseModule):
 
         dpr = [
             x.item() for x in torch.linspace(0, drop_path_rate, sum(depths))
-        ]  # stochastic depth decay rule
+        ]
         cur = 0
 
         for i in range(num_stages):
@@ -429,7 +318,7 @@ class MSCAN(BaseModule):
             setattr(self, f'norm{i + 1}', norm)
 
     def init_weights(self):
-        """Initialize modules of MSCAN."""
+
 
         print('init cfg', self.init_cfg)
         if self.init_cfg is None:
@@ -448,7 +337,7 @@ class MSCAN(BaseModule):
             super().init_weights()
 
     def forward(self, x):
-        """Forward function."""
+
 
         B = x.shape[0]
         outs = []

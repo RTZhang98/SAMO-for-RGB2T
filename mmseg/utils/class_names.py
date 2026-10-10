@@ -1,9 +1,8 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 from mmengine.utils import is_str
 
 
 def cityscapes_classes():
-    """Cityscapes class names for external use."""
+
     return [
         'road', 'sidewalk', 'building', 'wall', 'fence', 'pole',
         'traffic light', 'traffic sign', 'vegetation', 'terrain', 'sky',
@@ -13,7 +12,7 @@ def cityscapes_classes():
 
 
 def ade_classes():
-    """ADE20K class names for external use."""
+
     return [
         'wall', 'building', 'sky', 'floor', 'tree', 'ceiling', 'road', 'bed ',
         'windowpane', 'grass', 'cabinet', 'sidewalk', 'person', 'earth',
@@ -43,7 +42,7 @@ def ade_classes():
 
 
 def voc_classes():
-    """Pascal VOC class names for external use."""
+
     return [
         'background', 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
         'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse',
@@ -53,7 +52,7 @@ def voc_classes():
 
 
 def pcontext_classes():
-    """Pascal Context class names for external use."""
+
     return [
         'aeroplane', 'bag', 'bed', 'bedclothes', 'bench', 'bicycle', 'bird',
         'boat', 'book', 'bottle', 'building', 'bus', 'cabinet', 'car', 'cat',
@@ -68,7 +67,7 @@ def pcontext_classes():
 
 
 def cocostuff_classes():
-    """CocoStuff class names for external use."""
+
     return [
         'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train',
         'truck', 'boat', 'traffic light', 'fire hydrant', 'stop sign',
@@ -103,7 +102,7 @@ def cocostuff_classes():
 
 
 def loveda_classes():
-    """LoveDA class names for external use."""
+
     return [
         'background', 'building', 'road', 'water', 'barren', 'forest',
         'agricultural'
@@ -111,7 +110,7 @@ def loveda_classes():
 
 
 def potsdam_classes():
-    """Potsdam class names for external use."""
+
     return [
         'impervious_surface', 'building', 'low_vegetation', 'tree', 'car',
         'clutter'
@@ -119,7 +118,7 @@ def potsdam_classes():
 
 
 def vaihingen_classes():
-    """Vaihingen class names for external use."""
+
     return [
         'impervious_surface', 'building', 'low_vegetation', 'tree', 'car',
         'clutter'
@@ -127,7 +126,7 @@ def vaihingen_classes():
 
 
 def isaid_classes():
-    """iSAID class names for external use."""
+
     return [
         'background', 'ship', 'store_tank', 'baseball_diamond', 'tennis_court',
         'basketball_court', 'Ground_Track_Field', 'Bridge', 'Large_Vehicle',
@@ -137,12 +136,12 @@ def isaid_classes():
 
 
 def stare_classes():
-    """stare class names for external use."""
+
     return ['background', 'vessel']
 
 
 def mapillary_v1_classes():
-    """mapillary_v1 class names for external use."""
+
     return [
         'Bird', 'Ground Animal', 'Curb', 'Fence', 'Guard Rail', 'Barrier',
         'Wall', 'Bike Lane', 'Crosswalk - Plain', 'Curb Cut', 'Parking',
@@ -161,7 +160,7 @@ def mapillary_v1_classes():
 
 
 def mapillary_v1_palette():
-    """mapillary_v1_ palette for external use."""
+
     return [[165, 42, 42], [0, 192, 0], [196, 196, 196], [190, 153, 153],
             [180, 165, 180], [90, 120, 150], [102, 102, 156], [128, 64, 255],
             [140, 140, 200], [170, 170, 170], [250, 170, 160], [96, 96, 96],
@@ -181,7 +180,7 @@ def mapillary_v1_palette():
 
 
 def mapillary_v2_classes():
-    """mapillary_v2 class names for external use."""
+
     return [
         'Bird', 'Ground Animal', 'Ambiguous Barrier', 'Concrete Block', 'Curb',
         'Fence', 'Guard Rail', 'Barrier', 'Road Median', 'Road Side',
@@ -227,7 +226,7 @@ def mapillary_v2_classes():
 
 
 def mapillary_v2_palette():
-    """mapillary_v2_ palette for external use."""
+
     return [[165, 42, 42], [0, 192, 0], [250, 170, 31], [250, 170, 32],
             [196, 196, 196], [190, 153, 153], [180, 165, 180], [90, 120, 150],
             [250, 170, 33], [250, 170, 34], [128, 128, 128], [250, 170, 35],
@@ -262,7 +261,7 @@ def mapillary_v2_palette():
 
 
 def cityscapes_palette():
-    """Cityscapes palette for external use."""
+
     return [[128, 64, 128], [244, 35, 232], [70, 70, 70], [102, 102, 156],
             [190, 153, 153], [153, 153, 153], [250, 170, 30], [220, 220, 0],
             [107, 142, 35], [152, 251, 152], [70, 130, 180], [220, 20, 60],
@@ -271,7 +270,7 @@ def cityscapes_palette():
 
 
 def ade_palette():
-    """ADE20K palette for external use."""
+
     return [[120, 120, 120], [180, 120, 120], [6, 230, 230], [80, 50, 50],
             [4, 200, 3], [120, 120, 80], [140, 140, 140], [204, 5, 255],
             [230, 230, 230], [4, 250, 7], [224, 5, 255], [235, 255, 7],
@@ -313,7 +312,7 @@ def ade_palette():
 
 
 def voc_palette():
-    """Pascal VOC palette for external use."""
+
     return [[0, 0, 0], [128, 0, 0], [0, 128, 0], [128, 128, 0], [0, 0, 128],
             [128, 0, 128], [0, 128, 128], [128, 128, 128], [64, 0, 0],
             [192, 0, 0], [64, 128, 0], [192, 128, 0], [64, 0, 128],
@@ -322,7 +321,7 @@ def voc_palette():
 
 
 def pcontext_palette():
-    """Pascal Context palette for external use."""
+
     return [[180, 120, 120], [6, 230, 230], [80, 50, 50], [4, 200, 3],
             [120, 120, 80], [140, 140, 140], [204, 5, 255], [230, 230, 230],
             [4, 250, 7], [224, 5, 255], [235, 255, 7], [150, 5, 61],
@@ -341,7 +340,7 @@ def pcontext_palette():
 
 
 def cocostuff_palette():
-    """CocoStuff palette for external use."""
+
     return [[0, 192, 64], [0, 192, 64], [0, 64, 96], [128, 192, 192],
             [0, 64, 64], [0, 192, 224], [0, 192, 192], [128, 192, 64],
             [0, 192, 96], [128, 192, 64], [128, 32, 192], [0, 0, 224],
@@ -388,25 +387,25 @@ def cocostuff_palette():
 
 
 def loveda_palette():
-    """LoveDA palette for external use."""
+
     return [[255, 255, 255], [255, 0, 0], [255, 255, 0], [0, 0, 255],
             [159, 129, 183], [0, 255, 0], [255, 195, 128]]
 
 
 def potsdam_palette():
-    """Potsdam palette for external use."""
+
     return [[255, 255, 255], [0, 0, 255], [0, 255, 255], [0, 255, 0],
             [255, 255, 0], [255, 0, 0]]
 
 
 def vaihingen_palette():
-    """Vaihingen palette for external use."""
+
     return [[255, 255, 255], [0, 0, 255], [0, 255, 255], [0, 255, 0],
             [255, 255, 0], [255, 0, 0]]
 
 
 def isaid_palette():
-    """iSAID palette for external use."""
+
     return [[0, 0, 0], [0, 0, 63], [0, 63, 63], [0, 63, 0], [0, 63, 127],
             [0, 63, 191], [0, 63, 255], [0, 127, 63], [0, 127,
                                                        127], [0, 0, 127],
@@ -415,18 +414,18 @@ def isaid_palette():
 
 
 def stare_palette():
-    """STARE palette for external use."""
+
     return [[120, 120, 120], [6, 230, 230]]
 
 
 def synapse_palette():
-    """Synapse palette for external use."""
+
     return [[0, 0, 0], [0, 0, 255], [0, 255, 0], [255, 0, 0], [0, 255, 255],
             [255, 0, 255], [255, 255, 0], [60, 255, 255], [240, 240, 240]]
 
 
 def synapse_classes():
-    """Synapse class names for external use."""
+
     return [
         'background', 'aorta', 'gallbladder', 'left_kidney', 'right_kidney',
         'liver', 'pancreas', 'spleen', 'stomach'
@@ -434,7 +433,7 @@ def synapse_classes():
 
 
 def lip_classes():
-    """LIP class names for external use."""
+
     return [
         'background', 'hat', 'hair', 'glove', 'sunglasses', 'upperclothes',
         'dress', 'coat', 'socks', 'pants', 'jumpsuits', 'scarf', 'skirt',
@@ -444,7 +443,7 @@ def lip_classes():
 
 
 def lip_palette():
-    """LIP palette for external use."""
+
     return [
         'Background', 'Hat', 'Hair', 'Glove', 'Sunglasses', 'UpperClothes',
         'Dress', 'Coat', 'Socks', 'Pants', 'Jumpsuits', 'Scarf', 'Skirt',
@@ -454,8 +453,8 @@ def lip_palette():
 
 
 def bdd100k_classes():
-    """BDD100K class names for external use(the class name is compatible with
-    Cityscapes )."""
+
+
     return [
         'road', 'sidewalk', 'building', 'wall', 'fence', 'pole',
         'traffic light', 'traffic sign', 'vegetation', 'terrain', 'sky',
@@ -465,7 +464,7 @@ def bdd100k_classes():
 
 
 def bdd100k_palette():
-    """bdd100k palette for external use(same with cityscapes)"""
+
     return [[128, 64, 128], [244, 35, 232], [70, 70, 70], [102, 102, 156],
             [190, 153, 153], [153, 153, 153], [250, 170, 30], [220, 220, 0],
             [107, 142, 35], [152, 251, 152], [70, 130, 180], [220, 20, 60],
@@ -496,7 +495,7 @@ dataset_aliases = {
 
 
 def get_classes(dataset):
-    """Get class names of a dataset."""
+
     alias2name = {}
     for name, aliases in dataset_aliases.items():
         for alias in aliases:
@@ -513,7 +512,7 @@ def get_classes(dataset):
 
 
 def get_palette(dataset):
-    """Get class palette (RGB) of a dataset."""
+
     alias2name = {}
     for name, aliases in dataset_aliases.items():
         for alias in aliases:

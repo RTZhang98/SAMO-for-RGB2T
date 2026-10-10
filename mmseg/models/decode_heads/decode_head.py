@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import warnings
 from abc import ABCMeta, abstractmethod
 from typing import List, Tuple
@@ -16,70 +15,7 @@ from ..utils import resize
 
 
 class BaseDecodeHead(BaseModule, metaclass=ABCMeta):
-    """Base class for BaseDecodeHead.
 
-    1. The ``init_weights`` method is used to initialize decode_head's
-    model parameters. After segmentor initialization, ``init_weights``
-    is triggered when ``segmentor.init_weights()`` is called externally.
-
-    2. The ``loss`` method is used to calculate the loss of decode_head,
-    which includes two steps: (1) the decode_head model performs forward
-    propagation to obtain the feature maps (2) The ``loss_by_feat`` method
-    is called based on the feature maps to calculate the loss.
-
-    .. code:: text
-
-    loss(): forward() -> loss_by_feat()
-
-    3. The ``predict`` method is used to predict segmentation results,
-    which includes two steps: (1) the decode_head model performs forward
-    propagation to obtain the feature maps (2) The ``predict_by_feat`` method
-    is called based on the feature maps to predict segmentation results
-    including post-processing.
-
-    .. code:: text
-
-    predict(): forward() -> predict_by_feat()
-
-    Args:
-        in_channels (int|Sequence[int]): Input channels.
-        channels (int): Channels after modules, before conv_seg.
-        num_classes (int): Number of classes.
-        out_channels (int): Output channels of conv_seg. Default: None.
-        threshold (float): Threshold for binary segmentation in the case of
-            `num_classes==1`. Default: None.
-        dropout_ratio (float): Ratio of dropout layer. Default: 0.1.
-        conv_cfg (dict|None): Config of conv layers. Default: None.
-        norm_cfg (dict|None): Config of norm layers. Default: None.
-        act_cfg (dict): Config of activation layers.
-            Default: dict(type='ReLU')
-        in_index (int|Sequence[int]): Input feature index. Default: -1
-        input_transform (str|None): Transformation type of input features.
-            Options: 'resize_concat', 'multiple_select', None.
-            'resize_concat': Multiple feature maps will be resize to the
-                same size as first one and than concat together.
-                Usually used in FCN head of HRNet.
-            'multiple_select': Multiple feature maps will be bundle into
-                a list and passed into decode head.
-            None: Only one select feature map is allowed.
-            Default: None.
-        loss_decode (dict | Sequence[dict]): Config of decode loss.
-            The `loss_name` is property of corresponding loss function which
-            could be shown in training log. If you want this loss
-            item to be included into the backward graph, `loss_` must be the
-            prefix of the name. Defaults to 'loss_ce'.
-             e.g. dict(type='CrossEntropyLoss'),
-             [dict(type='CrossEntropyLoss', loss_name='loss_ce'),
-              dict(type='DiceLoss', loss_name='loss_dice')]
-            Default: dict(type='CrossEntropyLoss').
-        ignore_index (int | None): The label index to be ignored. When using
-            masked BCE loss, ignore_index should be set to None. Default: 255.
-        sampler (dict|None): The config of segmentation map sampler.
-            Default: None.
-        align_corners (bool): align_corners argument of F.interpolate.
-            Default: False.
-        init_cfg (dict or list[dict], optional): Initialization config dict.
-    """
 
     def __init__(self,
                  in_channels,
@@ -161,32 +97,14 @@ class BaseDecodeHead(BaseModule, metaclass=ABCMeta):
             self.dropout = None
 
     def extra_repr(self):
-        """Extra repr."""
+
         s = f'input_transform={self.input_transform}, ' \
             f'ignore_index={self.ignore_index}, ' \
             f'align_corners={self.align_corners}'
         return s
 
     def _init_inputs(self, in_channels, in_index, input_transform):
-        """Check and initialize input transforms.
 
-        The in_channels, in_index and input_transform must match.
-        Specifically, when input_transform is None, only single feature map
-        will be selected. So in_channels and in_index must be of type int.
-        When input_transform
-
-        Args:
-            in_channels (int|Sequence[int]): Input channels.
-            in_index (int|Sequence[int]): Input feature index.
-            input_transform (str|None): Transformation type of input features.
-                Options: 'resize_concat', 'multiple_select', None.
-                'resize_concat': Multiple feature maps will be resize to the
-                    same size as first one and than concat together.
-                    Usually used in FCN head of HRNet.
-                'multiple_select': Multiple feature maps will be bundle into
-                    a list and passed into decode head.
-                None: Only one select feature map is allowed.
-        """
 
         if input_transform is not None:
             assert input_transform in ['resize_concat', 'multiple_select']
@@ -206,14 +124,7 @@ class BaseDecodeHead(BaseModule, metaclass=ABCMeta):
             self.in_channels = in_channels
 
     def _transform_inputs(self, inputs):
-        """Transform inputs for decoder.
 
-        Args:
-            inputs (list[Tensor]): List of multi-level img features.
-
-        Returns:
-            Tensor: The transformed inputs
-        """
 
         if self.input_transform == 'resize_concat':
             inputs = [inputs[i] for i in self.in_index]
@@ -234,11 +145,11 @@ class BaseDecodeHead(BaseModule, metaclass=ABCMeta):
 
     @abstractmethod
     def forward(self, inputs):
-        """Placeholder of forward function."""
+
         pass
 
     def cls_seg(self, feat):
-        """Classify each pixel."""
+
         if self.dropout is not None:
             feat = self.dropout(feat)
         output = self.conv_seg(feat)
@@ -246,38 +157,16 @@ class BaseDecodeHead(BaseModule, metaclass=ABCMeta):
 
     def loss(self, inputs: Tuple[Tensor], batch_data_samples: SampleList,
              train_cfg: ConfigType) -> dict:
-        """Forward function for training.
 
-        Args:
-            inputs (Tuple[Tensor]): List of multi-level img features.
-            batch_data_samples (list[:obj:`SegDataSample`]): The seg
-                data samples. It usually includes information such
-                as `img_metas` or `gt_semantic_seg`.
-            train_cfg (dict): The training config.
 
-        Returns:
-            dict[str, Tensor]: a dictionary of loss components
-        """
         seg_logits = self.forward(inputs)
         losses = self.loss_by_feat(seg_logits, batch_data_samples)
         return losses
 
     def predict(self, inputs: Tuple[Tensor], batch_img_metas: List[dict],
                 test_cfg: ConfigType) -> Tensor:
-        """Forward function for prediction.
 
-        Args:
-            inputs (Tuple[Tensor]): List of multi-level img features.
-            batch_img_metas (dict): List Image info where each dict may also
-                contain: 'img_shape', 'scale_factor', 'flip', 'img_path',
-                'ori_shape', and 'pad_shape'.
-                For details on the values of these keys see
-                `mmseg/datasets/pipelines/formatting.py:PackSegInputs`.
-            test_cfg (dict): The testing config.
 
-        Returns:
-            Tensor: Outputs segmentation logits map.
-        """
         seg_logits = self.forward(inputs)
 
         return self.predict_by_feat(seg_logits, batch_img_metas)
@@ -290,17 +179,7 @@ class BaseDecodeHead(BaseModule, metaclass=ABCMeta):
 
     def loss_by_feat(self, seg_logits: Tensor,
                      batch_data_samples: SampleList) -> dict:
-        """Compute segmentation loss.
 
-        Args:
-            seg_logits (Tensor): The output from decode head forward function.
-            batch_data_samples (List[:obj:`SegDataSample`]): The seg
-                data samples. It usually includes information such
-                as `metainfo` and `gt_sem_seg`.
-
-        Returns:
-            dict[str, Tensor]: a dictionary of loss components
-        """
 
         seg_label = self._stack_batch_gt(batch_data_samples)
         loss = dict()
@@ -339,19 +218,10 @@ class BaseDecodeHead(BaseModule, metaclass=ABCMeta):
 
     def predict_by_feat(self, seg_logits: Tensor,
                         batch_img_metas: List[dict]) -> Tensor:
-        """Transform a batch of output seg_logits to the input shape.
 
-        Args:
-            seg_logits (Tensor): The output from decode head forward function.
-            batch_img_metas (list[dict]): Meta information of each image, e.g.,
-                image size, scaling factor, etc.
-
-        Returns:
-            Tensor: Outputs segmentation logits map.
-        """
 
         if isinstance(batch_img_metas[0]['img_shape'], torch.Size):
-            # slide inference
+
             size = batch_img_metas[0]['img_shape']
         elif 'pad_shape' in batch_img_metas[0]:
             size = batch_img_metas[0]['pad_shape'][:2]

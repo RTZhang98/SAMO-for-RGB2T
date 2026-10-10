@@ -1,5 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
-
 from mmseg.datasets.basesegdataset import BaseSegDataset
 from mmseg.registry import DATASETS
 

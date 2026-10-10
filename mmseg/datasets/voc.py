@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import os.path as osp
 
 import mmengine.fileio as fileio
@@ -9,11 +8,8 @@ from .basesegdataset import BaseSegDataset
 
 @DATASETS.register_module()
 class PascalVOCDataset(BaseSegDataset):
-    """Pascal VOC dataset.
 
-    Args:
-        split (str): Split txt file for Pascal VOC.
-    """
+
     METAINFO = dict(
         classes=('background', 'aeroplane', 'bicycle', 'bird', 'boat',
                  'bottle', 'bus', 'car', 'cat', 'chair', 'cow', 'diningtable',

@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 from typing import List, Optional, Union
 
 import numpy as np
@@ -9,16 +8,7 @@ from .typing_utils import SampleList
 
 
 def add_prefix(inputs, prefix):
-    """Add prefix for dict.
 
-    Args:
-        inputs (dict): The input dict with str keys.
-        prefix (str): The prefix to add.
-
-    Returns:
-
-        dict: The dict with keys updated with ``prefix``.
-    """
 
     outputs = dict()
     for name, value in inputs.items():
@@ -33,23 +23,8 @@ def stack_batch(inputs: List[torch.Tensor],
                 size_divisor: Optional[int] = None,
                 pad_val: Union[int, float] = 0,
                 seg_pad_val: Union[int, float] = 255) -> torch.Tensor:
-    """Stack multiple inputs to form a batch and pad the images and gt_sem_segs
-    to the max shape use the right bottom padding mode.
 
-    Args:
-        inputs (List[Tensor]): The input multiple tensors. each is a
-            CHW 3D-tensor.
-        data_samples (list[:obj:`SegDataSample`]): The list of data samples.
-            It usually includes information such as `gt_sem_seg`.
-        size (tuple, optional): Fixed padding size.
-        size_divisor (int, optional): The divisor of padded size.
-        pad_val (int, float): The padding value. Defaults to 0
-        seg_pad_val (int, float): The padding value. Defaults to 255
 
-    Returns:
-       Tensor: The 4D-tensor.
-       List[:obj:`SegDataSample`]: After the padding of the gt_seg_map.
-    """
     assert isinstance(inputs, list), \
         f'Expected input type to be list, but got {type(inputs)}'
     assert len({tensor.ndim for tensor in inputs}) == 1, \
@@ -61,7 +36,7 @@ def stack_batch(inputs: List[torch.Tensor],
         f'Expected the channels of all inputs must be the same, ' \
         f'but got {[tensor.shape[0] for tensor in inputs]}'
 
-    # only one of size and size_divisor should be valid
+
     assert (size is not None) ^ (size_divisor is not None), \
         'only one of size and size_divisor should be valid'
 
@@ -70,7 +45,7 @@ def stack_batch(inputs: List[torch.Tensor],
     inputs_sizes = [(img.shape[-2], img.shape[-1]) for img in inputs]
     max_size = np.stack(inputs_sizes).max(0)
     if size_divisor is not None and size_divisor > 1:
-        # the last two dims are H,W, both subject to divisibility requirement
+
         max_size = (max_size +
                     (size_divisor - 1)) // size_divisor * size_divisor
 
@@ -79,7 +54,7 @@ def stack_batch(inputs: List[torch.Tensor],
         if size is not None:
             width = max(size[-1] - tensor.shape[-1], 0)
             height = max(size[-2] - tensor.shape[-2], 0)
-            # (padding_left, padding_right, padding_top, padding_bottom)
+
             padding_size = (0, width, 0, height)
         elif size_divisor is not None:
             width = max(max_size[-1] - tensor.shape[-1], 0)
@@ -88,10 +63,10 @@ def stack_batch(inputs: List[torch.Tensor],
         else:
             padding_size = [0, 0, 0, 0]
 
-        # pad img
+
         pad_img = F.pad(tensor, padding_size, value=pad_val)
         padded_inputs.append(pad_img)
-        # pad gt_sem_seg
+
         if data_samples is not None:
             data_sample = data_samples[i]
             pad_shape = None

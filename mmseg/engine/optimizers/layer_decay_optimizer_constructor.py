@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import json
 import warnings
 
@@ -10,17 +9,7 @@ from mmseg.registry import OPTIM_WRAPPER_CONSTRUCTORS
 
 
 def get_layer_id_for_convnext(var_name, max_layer_id):
-    """Get the layer id to set the different learning rates in ``layer_wise``
-    decay_type.
 
-    Args:
-        var_name (str): The key of the model.
-        max_layer_id (int): Maximum number of backbone layers.
-
-    Returns:
-        int: The id number corresponding to different learning rate in
-        ``LearningRateDecayOptimizerConstructor``.
-    """
 
     if var_name in ('backbone.cls_token', 'backbone.mask_token',
                     'backbone.pos_embed'):
@@ -53,17 +42,7 @@ def get_layer_id_for_convnext(var_name, max_layer_id):
 
 
 def get_stage_id_for_convnext(var_name, max_stage_id):
-    """Get the stage id to set the different learning rates in ``stage_wise``
-    decay_type.
 
-    Args:
-        var_name (str): The key of the model.
-        max_stage_id (int): Maximum number of backbone layers.
-
-    Returns:
-        int: The id number corresponding to different learning rate in
-        ``LearningRateDecayOptimizerConstructor``.
-    """
 
     if var_name in ('backbone.cls_token', 'backbone.mask_token',
                     'backbone.pos_embed'):
@@ -78,15 +57,7 @@ def get_stage_id_for_convnext(var_name, max_stage_id):
 
 
 def get_layer_id_for_vit(var_name, max_layer_id):
-    """Get the layer id to set the different learning rates.
 
-    Args:
-        var_name (str): The key of the model.
-        num_max_layer (int): Maximum number of backbone layers.
-
-    Returns:
-        int: Returns the layer id of the key.
-    """
 
     if var_name in ('backbone.cls_token', 'backbone.mask_token',
                     'backbone.pos_embed'):
@@ -102,23 +73,10 @@ def get_layer_id_for_vit(var_name, max_layer_id):
 
 @OPTIM_WRAPPER_CONSTRUCTORS.register_module()
 class LearningRateDecayOptimizerConstructor(DefaultOptimWrapperConstructor):
-    """Different learning rates are set for different layers of backbone.
 
-    Note: Currently, this optimizer constructor is built for ConvNeXt,
-    BEiT and MAE.
-    """
 
     def add_params(self, params, module, **kwargs):
-        """Add all parameters of module to the params list.
 
-        The parameters of the given module will be added to the list of param
-        groups, with specific rules defined by paramwise_cfg.
-
-        Args:
-            params (list[dict]): A list of param groups, it will be modified
-                in place.
-            module (nn.Module): The module to be added.
-        """
 
         parameter_groups = {}
         print_log(f'self.paramwise_cfg is {self.paramwise_cfg}')
@@ -130,7 +88,7 @@ class LearningRateDecayOptimizerConstructor(DefaultOptimWrapperConstructor):
         weight_decay = self.base_wd
         for name, param in module.named_parameters():
             if not param.requires_grad:
-                continue  # frozen weights
+                continue
             if len(param.shape) == 1 or name.endswith('.bias') or name in (
                     'pos_embed', 'cls_token'):
                 group_name = 'no_decay'
@@ -187,12 +145,7 @@ class LearningRateDecayOptimizerConstructor(DefaultOptimWrapperConstructor):
 
 @OPTIM_WRAPPER_CONSTRUCTORS.register_module()
 class LayerDecayOptimizerConstructor(LearningRateDecayOptimizerConstructor):
-    """Different learning rates are set for different layers of backbone.
 
-    Note: Currently, this optimizer constructor is built for BEiT,
-    and it will be deprecated.
-    Please use ``LearningRateDecayOptimizerConstructor`` instead.
-    """
 
     def __init__(self, optim_wrapper_cfg, paramwise_cfg):
         warnings.warn('DeprecationWarning: Original '

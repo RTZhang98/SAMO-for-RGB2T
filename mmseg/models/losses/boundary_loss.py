@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -9,19 +8,7 @@ from mmseg.registry import MODELS
 
 @MODELS.register_module()
 class BoundaryLoss(nn.Module):
-    """Boundary loss.
 
-    This function is modified from
-    `PIDNet <https://github.com/XuJiacong/PIDNet/blob/main/utils/criterion.py#L122>`_.  # noqa
-    Licensed under the MIT License.
-
-
-    Args:
-        loss_weight (float): Weight of the loss. Defaults to 1.0.
-        loss_name (str): Name of the loss item. If you want this loss
-            item to be included into the backward graph, `loss_` must be the
-            prefix of the name. Defaults to 'loss_boundary'.
-    """
 
     def __init__(self,
                  loss_weight: float = 1.0,
@@ -31,14 +18,8 @@ class BoundaryLoss(nn.Module):
         self.loss_name_ = loss_name
 
     def forward(self, bd_pre: Tensor, bd_gt: Tensor) -> Tensor:
-        """Forward function.
-        Args:
-            bd_pre (Tensor): Predictions of the boundary head.
-            bd_gt (Tensor): Ground truth of the boundary.
 
-        Returns:
-            Tensor: Loss tensor.
-        """
+
         log_p = bd_pre.permute(0, 2, 3, 1).contiguous().view(1, -1)
         target_t = bd_gt.view(1, -1).float()
 

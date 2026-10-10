@@ -1,5 +1,3 @@
-"""Shared source-training pipeline and optimizer for SAMO v3."""
-
 import os
 
 train_pipeline = [

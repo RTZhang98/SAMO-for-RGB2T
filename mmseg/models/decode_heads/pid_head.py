@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 from typing import Optional, Tuple, Union
 
 import torch
@@ -15,18 +14,7 @@ from mmseg.utils import OptConfigType, SampleList
 
 
 class BasePIDHead(BaseModule):
-    """Base class for PID head.
 
-    Args:
-        in_channels (int): Number of input channels.
-        channels (int): Number of output channels.
-        norm_cfg (dict): Config dict for normalization layer.
-            Default: dict(type='BN').
-        act_cfg (dict): Config dict for activation layer.
-            Default: dict(type='ReLU', inplace=True).
-        init_cfg (dict or list[dict], optional): Init config dict.
-            Default: None.
-    """
 
     def __init__(self,
                  in_channels: int,
@@ -47,14 +35,8 @@ class BasePIDHead(BaseModule):
         self.act = build_activation_layer(act_cfg)
 
     def forward(self, x: Tensor, cls_seg: Optional[nn.Module]) -> Tensor:
-        """Forward function.
-        Args:
-            x (Tensor): Input tensor.
-            cls_seg (nn.Module, optional): The classification head.
 
-        Returns:
-            Tensor: Output tensor.
-        """
+
         x = self.conv(x)
         x = self.norm(x)
         x = self.act(x)
@@ -65,17 +47,7 @@ class BasePIDHead(BaseModule):
 
 @MODELS.register_module()
 class PIDHead(BaseDecodeHead):
-    """Decode head for PIDNet.
 
-    Args:
-        in_channels (int): Number of input channels.
-        channels (int): Number of output channels.
-        num_classes (int): Number of classes.
-        norm_cfg (dict): Config dict for normalization layer.
-            Default: dict(type='BN').
-        act_cfg (dict): Config dict for activation layer.
-            Default: dict(type='ReLU', inplace=True).
-    """
 
     def __init__(self,
                  in_channels: int,
@@ -115,19 +87,8 @@ class PIDHead(BaseDecodeHead):
             self,
             inputs: Union[Tensor,
                           Tuple[Tensor]]) -> Union[Tensor, Tuple[Tensor]]:
-        """Forward function.
-        Args:
-            inputs (Tensor | tuple[Tensor]): Input tensor or tuple of
-                Tensor. When training, the input is a tuple of three tensors,
-                (p_feat, i_feat, d_feat), and the output is a tuple of three
-                tensors, (p_seg_logit, i_seg_logit, d_seg_logit).
-                When inference, only the head of integral branch is used, and
-                input is a tensor of integral feature map, and the output is
-                the segmentation logit.
 
-        Returns:
-            Tensor | tuple[Tensor]: Output tensor or tuple of tensors.
-        """
+
         if self.training:
             x_p, x_i, x_d = inputs
             x_p = self.p_head(x_p, self.p_cls_seg)

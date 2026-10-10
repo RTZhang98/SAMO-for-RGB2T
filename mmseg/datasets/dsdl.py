@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import os
 from typing import Dict, List, Optional, Sequence, Union
 
@@ -13,15 +12,7 @@ except ImportError:
 
 @DATASETS.register_module()
 class DSDLSegDataset(BaseSegDataset):
-    """Dataset for dsdl segmentation.
 
-    Args:
-        specific_key_path(dict): Path of specific key which can not
-            be loaded by it's field name.
-        pre_transform(dict): pre-transform functions before loading.
-        used_labels(sequence): list of actual used classes in train steps,
-            this must be subset of class domain.
-    """
 
     METAINFO = {}
 
@@ -53,11 +44,7 @@ class DSDLSegDataset(BaseSegDataset):
         BaseSegDataset.__init__(self, **kwargs)
 
     def load_data_list(self) -> List[Dict]:
-        """Load data info from a dsdl yaml file named as ``self.ann_file``
 
-        Returns:
-            List[dict]: A list of data list.
-        """
 
         if self.used_labels:
             self._metainfo['classes'] = tuple(self.used_labels)
@@ -84,19 +71,8 @@ class DSDLSegDataset(BaseSegDataset):
     def get_label_map(self,
                       new_classes: Optional[Sequence] = None
                       ) -> Union[Dict, None]:
-        """Require label mapping.
 
-        The ``label_map`` is a dictionary, its keys are the old label ids and
-        its values are the new label ids, and is used for changing pixel
-        labels in load_annotations. If and only if old classes in class_dom
-        is not equal to new classes in args and nether of them is not
-        None, `label_map` is not None.
-        Args:
-            new_classes (list, tuple, optional): The new classes name from
-                metainfo. Default to None.
-        Returns:
-            dict, optional: The mapping from old classes to new classes.
-        """
+
         old_classes = ['background'] + self.dsdldataset.class_names
         if (new_classes is not None and old_classes is not None
                 and list(new_classes) != list(old_classes)):

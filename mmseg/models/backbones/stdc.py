@@ -1,5 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
-"""Modified from https://github.com/MichaelFan01/STDC-Seg."""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -12,19 +10,7 @@ from .bisenetv1 import AttentionRefinementModule
 
 
 class STDCModule(BaseModule):
-    """STDCModule.
 
-    Args:
-        in_channels (int): The number of input channels.
-        out_channels (int): The number of output channels before scaling.
-        stride (int): The number of stride for the first conv layer.
-        norm_cfg (dict): Config dict for normalization layer. Default: None.
-        act_cfg (dict): The activation config for conv layers.
-        num_convs (int): Numbers of conv layers.
-        fusion_type (str): Type of fusion operation. Default: 'add'.
-        init_cfg (dict or list[dict], optional): Initialization config dict.
-            Default: None.
-    """
 
     def __init__(self,
                  in_channels,
@@ -129,24 +115,7 @@ class STDCModule(BaseModule):
 
 
 class FeatureFusionModule(BaseModule):
-    """Feature Fusion Module. This module is different from FeatureFusionModule
-    in BiSeNetV1. It uses two ConvModules in `self.attention` whose inter
-    channel number is calculated by given `scale_factor`, while
-    FeatureFusionModule in BiSeNetV1 only uses one ConvModule in
-    `self.conv_atten`.
 
-    Args:
-        in_channels (int): The number of input channels.
-        out_channels (int): The number of output channels.
-        scale_factor (int): The number of channel scale factor.
-            Default: 4.
-        norm_cfg (dict): Config dict for normalization layer.
-            Default: dict(type='BN').
-        act_cfg (dict): The activation config for conv layers.
-            Default: dict(type='ReLU').
-        init_cfg (dict or list[dict], optional): Initialization config dict.
-            Default: None.
-    """
 
     def __init__(self,
                  in_channels,
@@ -186,43 +155,7 @@ class FeatureFusionModule(BaseModule):
 
 @MODELS.register_module()
 class STDCNet(BaseModule):
-    """This backbone is the implementation of `Rethinking BiSeNet For Real-time
-    Semantic Segmentation <https://arxiv.org/abs/2104.13188>`_.
 
-    Args:
-        stdc_type (int): The type of backbone structure,
-            `STDCNet1` and`STDCNet2` denotes two main backbones in paper,
-            whose FLOPs is 813M and 1446M, respectively.
-        in_channels (int): The num of input_channels.
-        channels (tuple[int]): The output channels for each stage.
-        bottleneck_type (str): The type of STDC Module type, the value must
-            be 'add' or 'cat'.
-        norm_cfg (dict): Config dict for normalization layer.
-        act_cfg (dict): The activation config for conv layers.
-        num_convs (int): Numbers of conv layer at each STDC Module.
-            Default: 4.
-        with_final_conv (bool): Whether add a conv layer at the Module output.
-            Default: True.
-        pretrained (str, optional): Model pretrained path. Default: None.
-        init_cfg (dict or list[dict], optional): Initialization config dict.
-            Default: None.
-
-    Example:
-        >>> import torch
-        >>> stdc_type = 'STDCNet1'
-        >>> in_channels = 3
-        >>> channels = (32, 64, 256, 512, 1024)
-        >>> bottleneck_type = 'cat'
-        >>> inputs = torch.rand(1, 3, 1024, 2048)
-        >>> self = STDCNet(stdc_type, in_channels,
-        ...                 channels, bottleneck_type).eval()
-        >>> outputs = self.forward(inputs)
-        >>> for i in range(len(outputs)):
-        ...     print(f'outputs[{i}].shape = {outputs[i].shape}')
-        outputs[0].shape = torch.Size([1, 256, 128, 256])
-        outputs[1].shape = torch.Size([1, 512, 64, 128])
-        outputs[2].shape = torch.Size([1, 1024, 32, 64])
-    """
 
     arch_settings = {
         'STDCNet1': [(2, 1), (2, 1), (2, 1)],
@@ -274,12 +207,8 @@ class STDCNet(BaseModule):
                 norm_cfg=norm_cfg,
                 act_cfg=act_cfg)
         ])
-        # `self.num_shallow_features` is the number of shallow modules in
-        # `STDCNet`, which is noted as `Stage1` and `Stage2` in original paper.
-        # They are both not used for following modules like Attention
-        # Refinement Module and Feature Fusion Module.
-        # Thus they would be cut from `outs`. Please refer to Figure 4
-        # of original paper for more details.
+
+
         self.num_shallow_features = len(self.stages)
 
         for strides in self.stage_strides:
@@ -287,10 +216,8 @@ class STDCNet(BaseModule):
             self.stages.append(
                 self._make_stage(self.channels[idx], self.channels[idx + 1],
                                  strides, norm_cfg, act_cfg, bottleneck_type))
-        # After appending, `self.stages` is a ModuleList including several
-        # shallow modules and STDCModules.
-        # (len(self.stages) ==
-        # self.num_shallow_features + len(self.stage_strides))
+
+
         if self.with_final_conv:
             self.final_conv = ConvModule(
                 self.channels[-1],
@@ -327,38 +254,7 @@ class STDCNet(BaseModule):
 
 @MODELS.register_module()
 class STDCContextPathNet(BaseModule):
-    """STDCNet with Context Path. The `outs` below is a list of three feature
-    maps from deep to shallow, whose height and width is from small to big,
-    respectively. The biggest feature map of `outs` is outputted for
-    `STDCHead`, where Detail Loss would be calculated by Detail Ground-truth.
-    The other two feature maps are used for Attention Refinement Module,
-    respectively. Besides, the biggest feature map of `outs` and the last
-    output of Attention Refinement Module are concatenated for Feature Fusion
-    Module. Then, this fusion feature map `feat_fuse` would be outputted for
-    `decode_head`. More details please refer to Figure 4 of original paper.
 
-    Args:
-        backbone_cfg (dict): Config dict for stdc backbone.
-        last_in_channels (tuple(int)), The number of channels of last
-            two feature maps from stdc backbone. Default: (1024, 512).
-        out_channels (int): The channels of output feature maps.
-            Default: 128.
-        ffm_cfg (dict): Config dict for Feature Fusion Module. Default:
-            `dict(in_channels=512, out_channels=256, scale_factor=4)`.
-        upsample_mode (str): Algorithm used for upsampling:
-                ``'nearest'`` | ``'linear'`` | ``'bilinear'`` | ``'bicubic'`` |
-                ``'trilinear'``. Default: ``'nearest'``.
-        align_corners (str): align_corners argument of F.interpolate. It
-            must be `None` if upsample_mode is ``'nearest'``. Default: None.
-        norm_cfg (dict): Config dict for normalization layer.
-            Default: dict(type='BN').
-        init_cfg (dict or list[dict], optional): Initialization config dict.
-            Default: None.
-
-    Return:
-        outputs (tuple): The tuple of list of output feature map for
-            auxiliary heads and decoder head.
-    """
 
     def __init__(self,
                  backbone_cfg,
@@ -414,9 +310,6 @@ class STDCContextPathNet(BaseModule):
 
         feat_fuse = self.ffm(outs[0], arms_out[1])
 
-        # The `outputs` has four feature maps.
-        # `outs[0]` is outputted for `STDCHead` auxiliary head.
-        # Two feature maps of `arms_out` are outputted for auxiliary head.
-        # `feat_fuse` is outputted for decoder head.
+
         outputs = [outs[0]] + list(arms_out) + [feat_fuse]
         return tuple(outputs)

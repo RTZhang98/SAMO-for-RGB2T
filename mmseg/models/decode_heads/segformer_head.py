@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import torch
 import torch.nn as nn
 from mmcv.cnn import ConvModule
@@ -10,15 +9,7 @@ from ..utils import resize
 
 @MODELS.register_module()
 class SegformerHead(BaseDecodeHead):
-    """The all mlp Head of segformer.
 
-    This head is the implementation of
-    `Segformer <https://arxiv.org/abs/2105.15203>` _.
-
-    Args:
-        interpolate_mode: The interpolate mode of MLP head upsample operation.
-            Default: 'bilinear'.
-    """
 
     def __init__(self, interpolate_mode='bilinear', **kwargs):
         super().__init__(input_transform='multiple_select', **kwargs)
@@ -46,7 +37,7 @@ class SegformerHead(BaseDecodeHead):
             norm_cfg=self.norm_cfg)
 
     def forward(self, inputs):
-        # Receive 4 stage backbone feature map: 1/4, 1/8, 1/16, 1/32
+
         inputs = self._transform_inputs(inputs)
         outs = []
         for idx in range(len(inputs)):

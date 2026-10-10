@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 from typing import List, Tuple
 
 import torch
@@ -15,15 +14,7 @@ from .decode_head import BaseDecodeHead
 
 
 class EncModule(nn.Module):
-    """Encoding Module used in EncNet.
 
-    Args:
-        in_channels (int): Input channels.
-        num_codes (int): Number of code words.
-        conv_cfg (dict|None): Config of conv layers.
-        norm_cfg (dict|None): Config of norm layers.
-        act_cfg (dict): Config of activation layers.
-    """
 
     def __init__(self, in_channels, num_codes, conv_cfg, norm_cfg, act_cfg):
         super().__init__()
@@ -34,8 +25,8 @@ class EncModule(nn.Module):
             conv_cfg=conv_cfg,
             norm_cfg=norm_cfg,
             act_cfg=act_cfg)
-        # TODO: resolve this hack
-        # change to 1d
+
+
         if norm_cfg is not None:
             encoding_norm_cfg = norm_cfg.copy()
             if encoding_norm_cfg['type'] in ['BN', 'IN']:
@@ -44,7 +35,7 @@ class EncModule(nn.Module):
                 encoding_norm_cfg['type'] = encoding_norm_cfg['type'].replace(
                     '2d', '1d')
         else:
-            # fallback to BN1d
+
             encoding_norm_cfg = dict(type='BN1d')
         self.encoding = nn.Sequential(
             Encoding(channels=in_channels, num_codes=num_codes),
@@ -54,7 +45,7 @@ class EncModule(nn.Module):
             nn.Linear(in_channels, in_channels), nn.Sigmoid())
 
     def forward(self, x):
-        """Forward function."""
+
         encoding_projection = self.encoding_project(x)
         encoding_feat = self.encoding(encoding_projection).mean(dim=1)
         batch_size, channels, _, _ = x.size()
@@ -66,20 +57,7 @@ class EncModule(nn.Module):
 
 @MODELS.register_module()
 class EncHead(BaseDecodeHead):
-    """Context Encoding for Semantic Segmentation.
 
-    This head is the implementation of `EncNet
-    <https://arxiv.org/abs/1803.08904>`_.
-
-    Args:
-        num_codes (int): Number of code words. Default: 32.
-        use_se_loss (bool): Whether use Semantic Encoding Loss (SE-loss) to
-            regularize the training. Default: True.
-        add_lateral (bool): Whether use lateral connection to fuse features.
-            Default: False.
-        loss_se_decode (dict): Config of decode loss.
-            Default: dict(type='CrossEntropyLoss', use_sigmoid=True).
-    """
 
     def __init__(self,
                  num_codes=32,
@@ -104,7 +82,7 @@ class EncHead(BaseDecodeHead):
             act_cfg=self.act_cfg)
         if add_lateral:
             self.lateral_convs = nn.ModuleList()
-            for in_channels in self.in_channels[:-1]:  # skip the last one
+            for in_channels in self.in_channels[:-1]:
                 self.lateral_convs.append(
                     ConvModule(
                         in_channels,
@@ -132,7 +110,7 @@ class EncHead(BaseDecodeHead):
             self.se_layer = nn.Linear(self.channels, self.num_classes)
 
     def forward(self, inputs):
-        """Forward function."""
+
         inputs = self._transform_inputs(inputs)
         feat = self.bottleneck(inputs[-1])
         if self.add_lateral:
@@ -155,7 +133,7 @@ class EncHead(BaseDecodeHead):
 
     def predict(self, inputs: Tuple[Tensor], batch_img_metas: List[dict],
                 test_cfg: ConfigType):
-        """Forward function for testing, ignore se_loss."""
+
         if self.use_se_loss:
             seg_logits = self.forward(inputs)[0]
         else:
@@ -164,15 +142,7 @@ class EncHead(BaseDecodeHead):
 
     @staticmethod
     def _convert_to_onehot_labels(seg_label, num_classes):
-        """Convert segmentation label to onehot.
 
-        Args:
-            seg_label (Tensor): Segmentation label of shape (N, H, W).
-            num_classes (int): Number of classes.
-
-        Returns:
-            Tensor: Onehot labels of shape (N, num_classes).
-        """
 
         batch_size = seg_label.size(0)
         onehot_labels = seg_label.new_zeros((batch_size, num_classes))
@@ -184,7 +154,7 @@ class EncHead(BaseDecodeHead):
 
     def loss_by_feat(self, seg_logit: Tuple[Tensor],
                      batch_data_samples: SampleList, **kwargs) -> dict:
-        """Compute segmentation and semantic encoding loss."""
+
         seg_logit, se_seg_logit = seg_logit
         loss = dict()
         loss.update(super().loss_by_feat(seg_logit, batch_data_samples))

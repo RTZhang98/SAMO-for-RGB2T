@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import math
 
 from mmcv.cnn import build_conv_layer, build_norm_layer
@@ -10,11 +9,7 @@ from .resnet import ResNet
 
 
 class Bottleneck(_Bottleneck):
-    """Bottleneck block for ResNeXt.
 
-    If style is "pytorch", the stride-two layer is the 3x3 conv layer, if it is
-    "caffe", the stride-two layer is the first 1x1 conv layer.
-    """
 
     def __init__(self,
                  inplanes,
@@ -86,49 +81,7 @@ class Bottleneck(_Bottleneck):
 
 @MODELS.register_module()
 class ResNeXt(ResNet):
-    """ResNeXt backbone.
 
-    This backbone is the implementation of `Aggregated
-    Residual Transformations for Deep Neural
-    Networks <https://arxiv.org/abs/1611.05431>`_.
-
-    Args:
-        depth (int): Depth of resnet, from {18, 34, 50, 101, 152}.
-        in_channels (int): Number of input image channels. Normally 3.
-        num_stages (int): Resnet stages, normally 4.
-        groups (int): Group of resnext.
-        base_width (int): Base width of resnext.
-        strides (Sequence[int]): Strides of the first block of each stage.
-        dilations (Sequence[int]): Dilation of each stage.
-        out_indices (Sequence[int]): Output from which stages.
-        style (str): `pytorch` or `caffe`. If set to "pytorch", the stride-two
-            layer is the 3x3 conv layer, otherwise the stride-two layer is
-            the first 1x1 conv layer.
-        frozen_stages (int): Stages to be frozen (all param fixed). -1 means
-            not freezing any parameters.
-        norm_cfg (dict): dictionary to construct and config norm layer.
-        norm_eval (bool): Whether to set norm layers to eval mode, namely,
-            freeze running stats (mean and var). Note: Effect on Batch Norm
-            and its variants only.
-        with_cp (bool): Use checkpoint or not. Using checkpoint will save some
-            memory while slowing down the training speed.
-        zero_init_residual (bool): whether to use zero init for last norm layer
-            in resblocks to let them behave as identity.
-
-    Example:
-        >>> from mmseg.models import ResNeXt
-        >>> import torch
-        >>> self = ResNeXt(depth=50)
-        >>> self.eval()
-        >>> inputs = torch.rand(1, 3, 32, 32)
-        >>> level_outputs = self.forward(inputs)
-        >>> for level_out in level_outputs:
-        ...     print(tuple(level_out.shape))
-        (1, 256, 8, 8)
-        (1, 512, 4, 4)
-        (1, 1024, 2, 2)
-        (1, 2048, 1, 1)
-    """
 
     arch_settings = {
         50: (Bottleneck, (3, 4, 6, 3)),
@@ -142,7 +95,7 @@ class ResNeXt(ResNet):
         super().__init__(**kwargs)
 
     def make_res_layer(self, **kwargs):
-        """Pack all blocks in a stage into a ``ResLayer``"""
+
         return ResLayer(
             groups=self.groups,
             base_width=self.base_width,

@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 try:
     import timm
 except ImportError:
@@ -12,18 +11,7 @@ from mmseg.registry import MODELS
 
 @MODELS.register_module()
 class TIMMBackbone(BaseModule):
-    """Wrapper to use backbones from timm library. More details can be found in
-    `timm <https://github.com/rwightman/pytorch-image-models>`_ .
 
-    Args:
-        model_name (str): Name of timm model to instantiate.
-        pretrained (bool): Load pretrained weights if True.
-        checkpoint_path (str): Path of checkpoint to load after
-            model is initialized.
-        in_channels (int): Number of input image channels. Default: 3.
-        init_cfg (dict, optional): Initialization config dict
-        **kwargs: Other timm & model specific arguments.
-    """
 
     def __init__(
         self,
@@ -49,12 +37,12 @@ class TIMMBackbone(BaseModule):
             **kwargs,
         )
 
-        # Make unused parameters None
+
         self.timm_model.global_pool = None
         self.timm_model.fc = None
         self.timm_model.classifier = None
 
-        # Hack to use pretrained weights from timm
+
         if pretrained or checkpoint_path:
             self._is_init = True
 

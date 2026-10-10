@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import copy
 import inspect
 import warnings
@@ -38,41 +37,15 @@ except ImportError:
 
 @TRANSFORMS.register_module()
 class ResizeToMultiple(BaseTransform):
-    """Resize images & seg to multiple of divisor.
 
-    Required Keys:
-
-    - img
-    - gt_seg_map
-
-    Modified Keys:
-
-    - img
-    - img_shape
-    - pad_shape
-
-    Args:
-        size_divisor (int): images and gt seg maps need to resize to multiple
-            of size_divisor. Default: 32.
-        interpolation (str, optional): The interpolation mode of image resize.
-            Default: None
-    """
 
     def __init__(self, size_divisor=32, interpolation=None):
         self.size_divisor = size_divisor
         self.interpolation = interpolation
 
     def transform(self, results: dict) -> dict:
-        """Call function to resize images, semantic segmentation map to
-        multiple of size divisor.
 
-        Args:
-            results (dict): Result dict from loading pipeline.
 
-        Returns:
-            dict: Resized results, 'img_shape', 'pad_shape' keys are updated.
-        """
-        # Align image to multiple of size divisor.
         img = results['img']
         img = mmcv.imresize_to_multiple(
             img,
@@ -85,7 +58,7 @@ class ResizeToMultiple(BaseTransform):
         results['img_shape'] = img.shape[:2]
         results['pad_shape'] = img.shape[:2]
 
-        # Align segmentation map to multiple of size divisor.
+
         for key in results.get('seg_fields', []):
             gt_seg = results[key]
             gt_seg = mmcv.imresize_to_multiple(
@@ -106,22 +79,7 @@ class ResizeToMultiple(BaseTransform):
 
 @TRANSFORMS.register_module()
 class Rerange(BaseTransform):
-    """Rerange the image pixel value.
 
-    Required Keys:
-
-    - img
-
-    Modified Keys:
-
-    - img
-
-    Args:
-        min_value (float or int): Minimum value of the reranged image.
-            Default: 0.
-        max_value (float or int): Maximum value of the reranged image.
-            Default: 255.
-    """
 
     def __init__(self, min_value=0, max_value=255):
         assert isinstance(min_value, float) or isinstance(min_value, int)
@@ -131,22 +89,16 @@ class Rerange(BaseTransform):
         self.max_value = max_value
 
     def transform(self, results: dict) -> dict:
-        """Call function to rerange images.
 
-        Args:
-            results (dict): Result dict from loading pipeline.
-        Returns:
-            dict: Reranged results.
-        """
 
         img = results['img']
         img_min_value = np.min(img)
         img_max_value = np.max(img)
 
         assert img_min_value < img_max_value
-        # rerange to [0, 1]
+
         img = (img - img_min_value) / (img_max_value - img_min_value)
-        # rerange to [min_value, max_value]
+
         img = img * (self.max_value - self.min_value) + self.min_value
         results['img'] = img
 
@@ -160,25 +112,7 @@ class Rerange(BaseTransform):
 
 @TRANSFORMS.register_module()
 class CLAHE(BaseTransform):
-    """Use CLAHE method to process the image.
 
-    See `ZUIDERVELD,K. Contrast Limited Adaptive Histogram Equalization[J].
-    Graphics Gems, 1994:474-485.` for more information.
-
-    Required Keys:
-
-    - img
-
-    Modified Keys:
-
-    - img
-
-    Args:
-        clip_limit (float): Threshold for contrast limiting. Default: 40.0.
-        tile_grid_size (tuple[int]): Size of grid for histogram equalization.
-            Input image will be divided into equally sized rectangular tiles.
-            It defines the number of tiles in row and column. Default: (8, 8).
-    """
 
     def __init__(self, clip_limit=40.0, tile_grid_size=(8, 8)):
         assert isinstance(clip_limit, (float, int))
@@ -188,14 +122,7 @@ class CLAHE(BaseTransform):
         self.tile_grid_size = tile_grid_size
 
     def transform(self, results: dict) -> dict:
-        """Call function to Use CLAHE method process images.
 
-        Args:
-            results (dict): Result dict from loading pipeline.
-
-        Returns:
-            dict: Processed results.
-        """
 
         for i in range(results['img'].shape[2]):
             results['img'][:, :, i] = mmcv.clahe(
@@ -213,28 +140,7 @@ class CLAHE(BaseTransform):
 
 @TRANSFORMS.register_module()
 class RandomCrop(BaseTransform):
-    """Random crop the image & seg.
 
-    Required Keys:
-
-    - img
-    - gt_seg_map
-
-    Modified Keys:
-
-    - img
-    - img_shape
-    - gt_seg_map
-
-
-    Args:
-        crop_size (Union[int, Tuple[int, int]]):  Expected size after cropping
-            with the format of (h, w). If set to an integer, then cropping
-            width and height are equal to this integer.
-        cat_max_ratio (float): The maximum ratio that single category could
-            occupy.
-        ignore_index (int): The label index to be ignored. Default: 255
-    """
 
     def __init__(self,
                  crop_size: Union[int, Tuple[int, int]],
@@ -244,7 +150,7 @@ class RandomCrop(BaseTransform):
         assert isinstance(crop_size, int) or (
             isinstance(crop_size, tuple) and len(crop_size) == 2
         ), 'The expected crop_size is an integer, or a tuple containing two '
-        'intergers'
+
 
         if isinstance(crop_size, int):
             crop_size = (crop_size, crop_size)
@@ -255,24 +161,10 @@ class RandomCrop(BaseTransform):
 
     @cache_randomness
     def crop_bbox(self, results: dict) -> tuple:
-        """get a crop bounding box.
 
-        Args:
-            results (dict): Result dict from loading pipeline.
-
-        Returns:
-            tuple: Coordinates of the cropped image.
-        """
 
         def generate_crop_bbox(img: np.ndarray) -> tuple:
-            """Randomly get a crop bounding box.
 
-            Args:
-                img (np.ndarray): Original input image.
-
-            Returns:
-                tuple: Coordinates of the cropped image.
-            """
 
             margin_h = max(img.shape[0] - self.crop_size[0], 0)
             margin_w = max(img.shape[1] - self.crop_size[1], 0)
@@ -286,7 +178,7 @@ class RandomCrop(BaseTransform):
         img = results['img']
         crop_bbox = generate_crop_bbox(img)
         if self.cat_max_ratio < 1.:
-            # Repeat 10 times
+
             for _ in range(10):
                 seg_temp = self.crop(results['gt_seg_map'], crop_bbox)
                 labels, cnt = np.unique(seg_temp, return_counts=True)
@@ -299,39 +191,22 @@ class RandomCrop(BaseTransform):
         return crop_bbox
 
     def crop(self, img: np.ndarray, crop_bbox: tuple) -> np.ndarray:
-        """Crop from ``img``
 
-        Args:
-            img (np.ndarray): Original input image.
-            crop_bbox (tuple): Coordinates of the cropped image.
-
-        Returns:
-            np.ndarray: The cropped image.
-        """
 
         crop_y1, crop_y2, crop_x1, crop_x2 = crop_bbox
         img = img[crop_y1:crop_y2, crop_x1:crop_x2, ...]
         return img
 
     def transform(self, results: dict) -> dict:
-        """Transform function to randomly crop images, semantic segmentation
-        maps.
 
-        Args:
-            results (dict): Result dict from loading pipeline.
-
-        Returns:
-            dict: Randomly cropped results, 'img_shape' key in result dict is
-                updated according to crop size.
-        """
 
         img = results['img']
         crop_bbox = self.crop_bbox(results)
 
-        # crop the image
+
         img = self.crop(img, crop_bbox)
 
-        # crop semantic seg
+
         for key in results.get('seg_fields', []):
             results[key] = self.crop(results[key], crop_bbox)
 
@@ -345,32 +220,7 @@ class RandomCrop(BaseTransform):
 
 @TRANSFORMS.register_module()
 class RandomRotate(BaseTransform):
-    """Rotate the image & seg.
 
-    Required Keys:
-
-    - img
-    - gt_seg_map
-
-    Modified Keys:
-
-    - img
-    - gt_seg_map
-
-    Args:
-        prob (float): The rotation probability.
-        degree (float, tuple[float]): Range of degrees to select from. If
-            degree is a number instead of tuple like (min, max),
-            the range of degree will be (``-degree``, ``+degree``)
-        pad_val (float, optional): Padding value of image. Default: 0.
-        seg_pad_val (float, optional): Padding value of segmentation map.
-            Default: 255.
-        center (tuple[float], optional): Center point (w, h) of the rotation in
-            the source image. If not specified, the center of the image will be
-            used. Default: None.
-        auto_bound (bool): Whether to adjust the image size to cover the whole
-            rotated image. Default: False
-    """
 
     def __init__(self,
                  prob,
@@ -399,18 +249,11 @@ class RandomRotate(BaseTransform):
             min(*self.degree), max(*self.degree))
 
     def transform(self, results: dict) -> dict:
-        """Call function to rotate image, semantic segmentation maps.
 
-        Args:
-            results (dict): Result dict from loading pipeline.
-
-        Returns:
-            dict: Rotated results.
-        """
 
         rotate, degree = self.generate_degree()
         if rotate:
-            # rotate image
+
             results['img'] = mmcv.imrotate(
                 results['img'],
                 angle=degree,
@@ -418,7 +261,7 @@ class RandomRotate(BaseTransform):
                 center=self.center,
                 auto_bound=self.auto_bound)
 
-            # rotate segs
+
             for key in results.get('seg_fields', []):
                 results[key] = mmcv.imrotate(
                     results[key],
@@ -442,49 +285,25 @@ class RandomRotate(BaseTransform):
 
 @TRANSFORMS.register_module()
 class RGB2Gray(BaseTransform):
-    """Convert RGB image to grayscale image with probability using OpenCV.
 
-    Required Keys:
-
-    - img
-
-    Modified Keys:
-
-    - img
-    - img_shape
-
-    This transform converts BGR image to grayscale using OpenCV's weights
-    (B*0.114 + G*0.587 + R*0.299), then duplicates the grayscale channel
-    to 3 channels.
-
-    Args:
-        grayscale_prob (float): Probability of converting to grayscale.
-            Default: 1.0 (always convert).
-    """
 
     def __init__(self, grayscale_prob=1.0):
-        # 添加灰度化概率参数
+
         assert 0.0 <= grayscale_prob <= 1.0, \
             f'grayscale_prob must be in [0, 1], got {grayscale_prob}'
         self.grayscale_prob = grayscale_prob
 
     def transform(self, results: dict) -> dict:
-        """Call function to convert BGR image to grayscale image with probability.
 
-        Args:
-            results (dict): Result dict from loading pipeline.
 
-        Returns:
-            dict: Result dict with grayscale image or original image.
-        """
         img = results['img']
-        
+
         if random.random() < self.grayscale_prob:
-            # 将BGR转换为灰度图 (使用OpenCV的权重: B*0.114 + G*0.587 + R*0.299)
+
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-            # 将单通道灰度图复制为三通道
+
             img = np.stack([gray, gray, gray], axis=2)
-        
+
         results['img'] = img
         results['img_shape'] = img.shape
 
@@ -498,20 +317,7 @@ class RGB2Gray(BaseTransform):
 
 @TRANSFORMS.register_module()
 class AdjustGamma(BaseTransform):
-    """Using gamma correction to process the image.
 
-    Required Keys:
-
-    - img
-
-    Modified Keys:
-
-    - img
-
-    Args:
-        gamma (float or int): Gamma value used in gamma correction.
-            Default: 1.0.
-    """
 
     def __init__(self, gamma=1.0):
         assert isinstance(gamma, float) or isinstance(gamma, int)
@@ -522,14 +328,7 @@ class AdjustGamma(BaseTransform):
                                for i in np.arange(256)]).astype('uint8')
 
     def transform(self, results: dict) -> dict:
-        """Call function to process the image with gamma correction.
 
-        Args:
-            results (dict): Result dict from loading pipeline.
-
-        Returns:
-            dict: Processed results.
-        """
 
         results['img'] = mmcv.lut_transform(
             np.array(results['img'], dtype=np.uint8), self.table)
@@ -542,32 +341,14 @@ class AdjustGamma(BaseTransform):
 
 @TRANSFORMS.register_module()
 class SegRescale(BaseTransform):
-    """Rescale semantic segmentation maps.
 
-    Required Keys:
-
-    - gt_seg_map
-
-    Modified Keys:
-
-    - gt_seg_map
-
-    Args:
-        scale_factor (float): The scale factor of the final output.
-    """
 
     def __init__(self, scale_factor=1):
         self.scale_factor = scale_factor
 
     def transform(self, results: dict) -> dict:
-        """Call function to scale the semantic segmentation map.
 
-        Args:
-            results (dict): Result dict from loading pipeline.
 
-        Returns:
-            dict: Result dict with semantic segmentation map scaled.
-        """
         for key in results.get('seg_fields', []):
             if self.scale_factor != 1:
                 results[key] = mmcv.imrescale(
@@ -580,32 +361,7 @@ class SegRescale(BaseTransform):
 
 @TRANSFORMS.register_module()
 class PhotoMetricDistortion(BaseTransform):
-    """Apply photometric distortion to image sequentially, every transformation
-    is applied with a probability of 0.5. The position of random contrast is in
-    second or second to last.
 
-    1. random brightness
-    2. random contrast (mode 0)
-    3. convert color from BGR to HSV
-    4. random saturation
-    5. random hue
-    6. convert color from HSV to BGR
-    7. random contrast (mode 1)
-
-    Required Keys:
-
-    - img
-
-    Modified Keys:
-
-    - img
-
-    Args:
-        brightness_delta (int): delta of brightness.
-        contrast_range (tuple): range of contrast.
-        saturation_range (tuple): range of saturation.
-        hue_delta (int): delta of hue.
-    """
 
     def __init__(self,
                  brightness_delta: int = 32,
@@ -621,31 +377,14 @@ class PhotoMetricDistortion(BaseTransform):
                 img: np.ndarray,
                 alpha: int = 1,
                 beta: int = 0) -> np.ndarray:
-        """Multiple with alpha and add beat with clip.
 
-        Args:
-            img (np.ndarray): The input image.
-            alpha (int): Image weights, change the contrast/saturation
-                of the image. Default: 1
-            beta (int): Image bias, change the brightness of the
-                image. Default: 0
-
-        Returns:
-            np.ndarray: The transformed image.
-        """
 
         img = img.astype(np.float32) * alpha + beta
         img = np.clip(img, 0, 255)
         return img.astype(np.uint8)
 
     def brightness(self, img: np.ndarray) -> np.ndarray:
-        """Brightness distortion.
 
-        Args:
-            img (np.ndarray): The input image.
-        Returns:
-            np.ndarray: Image after brightness change.
-        """
 
         if random.randint(2):
             return self.convert(
@@ -655,13 +394,7 @@ class PhotoMetricDistortion(BaseTransform):
         return img
 
     def contrast(self, img: np.ndarray) -> np.ndarray:
-        """Contrast distortion.
 
-        Args:
-            img (np.ndarray): The input image.
-        Returns:
-            np.ndarray: Image after contrast change.
-        """
 
         if random.randint(2):
             return self.convert(
@@ -670,13 +403,7 @@ class PhotoMetricDistortion(BaseTransform):
         return img
 
     def saturation(self, img: np.ndarray) -> np.ndarray:
-        """Saturation distortion.
 
-        Args:
-            img (np.ndarray): The input image.
-        Returns:
-            np.ndarray: Image after saturation change.
-        """
 
         if random.randint(2):
             img = mmcv.bgr2hsv(img)
@@ -688,13 +415,7 @@ class PhotoMetricDistortion(BaseTransform):
         return img
 
     def hue(self, img: np.ndarray) -> np.ndarray:
-        """Hue distortion.
 
-        Args:
-            img (np.ndarray): The input image.
-        Returns:
-            np.ndarray: Image after hue change.
-        """
 
         if random.randint(2):
             img = mmcv.bgr2hsv(img)
@@ -705,32 +426,24 @@ class PhotoMetricDistortion(BaseTransform):
         return img
 
     def transform(self, results: dict) -> dict:
-        """Transform function to perform photometric distortion on images.
 
-        Args:
-            results (dict): Result dict from loading pipeline.
-
-        Returns:
-            dict: Result dict with images distorted.
-        """
 
         img = results['img']
-        # random brightness
+
         img = self.brightness(img)
 
-        # mode == 0 --> do random contrast first
-        # mode == 1 --> do random contrast last
+
         mode = random.randint(2)
         if mode == 1:
             img = self.contrast(img)
 
-        # random saturation
+
         img = self.saturation(img)
 
-        # random hue
+
         img = self.hue(img)
 
-        # random contrast
+
         if mode == 0:
             img = self.contrast(img)
 
@@ -749,22 +462,7 @@ class PhotoMetricDistortion(BaseTransform):
 
 @TRANSFORMS.register_module()
 class CustomizePhotoMetricDistortionGPT(BaseTransform):
-    """Apply photometric distortions, noise, and additional augmentations to 
-    `img` and `img_mixup` with independent transform flows.
 
-    Supports brightness, contrast, saturation, hue, noise addition, and 
-    additional augmentations like Gaussian blur. Ensures pixel alignment 
-    between `img` and `img_mixup`.
-
-    Args:
-        brightness_delta (int): The delta range for brightness adjustment.
-        contrast_range (tuple): The range for contrast adjustment.
-        saturation_range (tuple): The range for saturation adjustment.
-        hue_delta (int): The delta range for hue adjustment.
-        noise_std (float): Standard deviation of Gaussian noise.
-        aug_prob (float): Probability of applying each augmentation.
-        seed (Optional[int]): Random seed for reproducibility. Default: None.
-    """
 
     def __init__(self,
                  num=2,
@@ -772,8 +470,8 @@ class CustomizePhotoMetricDistortionGPT(BaseTransform):
                  contrast_range: Sequence[float] = (0.3, 2.0),
                  saturation_range: Sequence[float] = (0.3, 2.0),
                  hue_delta: int = 36,
-                 noise_std: float = 25.0,  # 噪声强度
-                 aug_prob: float = 0.5,  # 每个增强的触发概率
+                 noise_std: float = 25.0,
+                 aug_prob: float = 0.5,
                  seed: Optional[int] = None):
         self.brightness_delta = brightness_delta
         self.contrast_lower, self.contrast_upper = contrast_range
@@ -782,7 +480,7 @@ class CustomizePhotoMetricDistortionGPT(BaseTransform):
         self.noise_std = noise_std
         self.aug_prob = aug_prob
 
-        # Define additional augmentations (仅保留不会破坏像素对齐的增强方法)
+
         self.augmentations = [
             RandomBrightnessContrast(brightness_limit=(-0.3, 0.3), contrast_limit=(-0.2, 0.2), p=1.0),
             HueSaturationValue(hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20, p=1.0),
@@ -794,28 +492,28 @@ class CustomizePhotoMetricDistortionGPT(BaseTransform):
             nprd.seed(seed)
 
     def convert(self, img: np.ndarray, alpha: float = 1, beta: float = 0) -> np.ndarray:
-        """Adjust contrast or brightness of the image."""
+
         img = img.astype(np.float32) * alpha + beta
         return np.clip(img, 0, 255).astype(np.uint8)
 
     def brightness(self, img: np.ndarray) -> np.ndarray:
-        """Randomly adjust brightness."""
-        if nprd.random() < self.aug_prob:  # Apply based on probability
+
+        if nprd.random() < self.aug_prob:
             beta = nprd.uniform(-self.brightness_delta, self.brightness_delta)
             img = self.convert(img, beta=beta)
         return img
 
     def contrast(self, img: np.ndarray) -> np.ndarray:
-        """Randomly adjust contrast."""
-        if nprd.random() < self.aug_prob:  # Apply based on probability
+
+        if nprd.random() < self.aug_prob:
             alpha = nprd.uniform(self.contrast_lower, self.contrast_upper)
             img = self.convert(img, alpha=alpha)
         return img
 
     def saturation(self, img: np.ndarray) -> np.ndarray:
-        """Randomly adjust saturation."""
+
         img_hsv = mmcv.bgr2hsv(img)
-        if nprd.random() < self.aug_prob:  # Apply based on probability
+        if nprd.random() < self.aug_prob:
             img_hsv[:, :, 1] = self.convert(
                 img_hsv[:, :, 1], alpha=nprd.uniform(self.saturation_lower, self.saturation_upper)
             )
@@ -823,32 +521,32 @@ class CustomizePhotoMetricDistortionGPT(BaseTransform):
         return img
 
     def hue(self, img: np.ndarray) -> np.ndarray:
-        """Randomly adjust hue."""
+
         img_hsv = mmcv.bgr2hsv(img)
-        if nprd.random() < self.aug_prob:  # Apply based on probability
+        if nprd.random() < self.aug_prob:
             img_hsv[:, :, 0] = (img_hsv[:, :, 0].astype(int) +
                                 nprd.randint(-self.hue_delta, self.hue_delta)) % 180
         img = mmcv.hsv2bgr(img_hsv)
         return img
 
     def add_noise(self, img: np.ndarray) -> np.ndarray:
-        """Add Gaussian noise to the image."""
-        if nprd.random() < self.aug_prob:  # Apply based on probability
+
+        if nprd.random() < self.aug_prob:
             noise = nprd.normal(0, self.noise_std, img.shape).astype(np.float32)
             img = img.astype(np.float32) + noise
         return np.clip(img, 0, 255).astype(np.uint8)
 
     def apply_augmentations(self, img: np.ndarray) -> np.ndarray:
-        """Randomly apply additional augmentations."""
-        num_augmentations = nprd.randint(1, len(self.augmentations))  # Random number of augmentations
-        chosen_augmentations = sample(self.augmentations, num_augmentations)  # 使用正确的 sample 方法
+
+        num_augmentations = nprd.randint(1, len(self.augmentations))
+        chosen_augmentations = sample(self.augmentations, num_augmentations)
         augmentations = Compose(chosen_augmentations)
         img = augmentations(image=img)['image']
         return img
 
     def apply_transform(self, img: np.ndarray) -> np.ndarray:
-        """Apply photometric distortion, noise, and additional augmentation."""
-        # Photometric transformations
+
+
         img = self.brightness(img)
         mode = nprd.randint(0, 1)
         if mode == 1:
@@ -858,28 +556,28 @@ class CustomizePhotoMetricDistortionGPT(BaseTransform):
         if mode == 0:
             img = self.contrast(img)
 
-        # Add Gaussian noise
+
         img = self.add_noise(img)
 
-        # Apply additional augmentations
-        if nprd.random() < self.aug_prob:  # Apply based on probability
+
+        if nprd.random() < self.aug_prob:
             img = self.apply_augmentations(img)
 
         return img
 
     def transform(self, results: dict) -> dict:
-        """Apply independent photometric distortions and augmentations."""
+
         img = results['img']
 
-        # Split `img` and `img_mixup`
-        img_original = img[:, :, 0:3]  # First 3 channels: original image
-        img_mixup = img[:, :, 3:6]  # Last 3 channels: mixup image
 
-        # Apply independent transformations
+        img_original = img[:, :, 0:3]
+        img_mixup = img[:, :, 3:6]
+
+
         img_original = self.apply_transform(img_original)
         img_mixup = self.apply_transform(img_mixup)
 
-        # Concatenate the results back
+
         results['img'] = np.concatenate([img_original, img_mixup], axis=2)
         return results
 
@@ -893,35 +591,10 @@ class CustomizePhotoMetricDistortionGPT(BaseTransform):
                      f'aug_prob={self.aug_prob}, '
                      f'seed={self.seed})')
         return repr_str
-    
+
 @TRANSFORMS.register_module()
 class PhotoMetricDistortionWithStyle(BaseTransform):
-    """Apply photometric distortion to image sequentially, every transformation
-    is applied with a probability of 0.5. The position of random contrast is in
-    second or second to last.
 
-    1. random brightness
-    2. random contrast (mode 0)
-    3. convert color from BGR to HSV
-    4. random saturation
-    5. random hue
-    6. convert color from HSV to BGR
-    7. random contrast (mode 1)
-
-    Required Keys:
-
-    - img
-
-    Modified Keys:
-
-    - img
-
-    Args:
-        brightness_delta (int): delta of brightness.
-        contrast_range (tuple): range of contrast.
-        saturation_range (tuple): range of saturation.
-        hue_delta (int): delta of hue.
-    """
 
     def __init__(self,
                  brightness_delta: int = 32,
@@ -939,31 +612,14 @@ class PhotoMetricDistortionWithStyle(BaseTransform):
                 img: np.ndarray,
                 alpha: int = 1,
                 beta: int = 0) -> np.ndarray:
-        """Multiple with alpha and add beat with clip.
 
-        Args:
-            img (np.ndarray): The input image.
-            alpha (int): Image weights, change the contrast/saturation
-                of the image. Default: 1
-            beta (int): Image bias, change the brightness of the
-                image. Default: 0
-
-        Returns:
-            np.ndarray: The transformed image.
-        """
 
         img = img.astype(np.float32) * alpha + beta
         img = np.clip(img, 0, 255)
         return img.astype(np.uint8)
 
     def brightness(self, img: np.ndarray) -> np.ndarray:
-        """Brightness distortion.
 
-        Args:
-            img (np.ndarray): The input image.
-        Returns:
-            np.ndarray: Image after brightness change.
-        """
 
         if random.randint(2):
             return self.convert(
@@ -973,13 +629,7 @@ class PhotoMetricDistortionWithStyle(BaseTransform):
         return img
 
     def contrast(self, img: np.ndarray) -> np.ndarray:
-        """Contrast distortion.
 
-        Args:
-            img (np.ndarray): The input image.
-        Returns:
-            np.ndarray: Image after contrast change.
-        """
 
         if random.randint(2):
             return self.convert(
@@ -988,13 +638,7 @@ class PhotoMetricDistortionWithStyle(BaseTransform):
         return img
 
     def saturation(self, img: np.ndarray) -> np.ndarray:
-        """Saturation distortion.
 
-        Args:
-            img (np.ndarray): The input image.
-        Returns:
-            np.ndarray: Image after saturation change.
-        """
 
         if random.randint(2):
             img = mmcv.bgr2hsv(img)
@@ -1006,13 +650,7 @@ class PhotoMetricDistortionWithStyle(BaseTransform):
         return img
 
     def hue(self, img: np.ndarray) -> np.ndarray:
-        """Hue distortion.
 
-        Args:
-            img (np.ndarray): The input image.
-        Returns:
-            np.ndarray: Image after hue change.
-        """
 
         if random.randint(2):
             img = mmcv.bgr2hsv(img)
@@ -1022,68 +660,42 @@ class PhotoMetricDistortionWithStyle(BaseTransform):
             img = mmcv.hsv2bgr(img)
         return img
 
-    # def grayscale(self, img: np.ndarray) -> np.ndarray:
-    #     """Convert image to grayscale while keeping 3 channels.
-
-    #     Args:
-    #         img (np.ndarray): The input image (BGR format).
-    #     Returns:
-    #         np.ndarray: Grayscale image with 3 identical channels.
-    #     """
-
-    #     if random.random() < self.grayscale_prob:
-    #         # 将BGR转换为灰度图 (使用OpenCV的权重: B*0.114 + G*0.587 + R*0.299)
-    #         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    #         # 将单通道灰度图复制为三通道
-    #         img = np.stack([gray, gray, gray], axis=2)
-    #     return img
 
     def transform(self, results: dict) -> dict:
-        """Transform function to perform photometric distortion on images.
 
-        Args:
-            results (dict): Result dict from loading pipeline.
-
-        Returns:
-            dict: Result dict with images distorted.
-        """
 
         img = results['img']
         img_style = results['img_style']
 
-        # random brightness
+
         img = self.brightness(img)
 
-        # mode == 0 --> do random contrast first
-        # mode == 1 --> do random contrast last
+
         mode = random.randint(2)
         if mode == 1:
             img = self.contrast(img)
 
-        # random saturation
+
         img = self.saturation(img)
 
-        # random hue
+
         img = self.hue(img)
 
-        # random contrast
+
         if mode == 0:
             img = self.contrast(img)
 
-        # random grayscale (保持三通道)
-        # img = self.grayscale(img)
 
-        # 检查两者的形状是否一致（除了通道维度）
         if img.shape!= img_style.shape:
-            # 使用 PIL 将 img_style 调整为 img 的尺寸
-            img_style_resized = Image.fromarray(img_style.astype(np.uint8))  # 转为 PIL 图像
-            img_style_resized = img_style_resized.resize((img.shape[1], img.shape[0]), Image.BILINEAR)  # 调整大小
-            img_style = np.array(img_style_resized).astype(np.float32)   # 转回 NumPy 数组
 
-        # 在通道维度（第 0 维）拼接
+            img_style_resized = Image.fromarray(img_style.astype(np.uint8))
+            img_style_resized = img_style_resized.resize((img.shape[1], img.shape[0]), Image.BILINEAR)
+            img_style = np.array(img_style_resized).astype(np.float32)
+
+
         img_combined = np.concatenate([img, img_style], axis=2)
 
-        # 将拼接后的图像存回 results
+
         results['img'] = img_combined
         return results
 
@@ -1097,7 +709,7 @@ class PhotoMetricDistortionWithStyle(BaseTransform):
                      f'hue_delta={self.hue_delta})')
         return repr_str
 
-   
+
 @TRANSFORMS.register_module()
 class ConcatStyle(BaseTransform):
     def transform(self, results: dict) -> dict:
@@ -1105,63 +717,38 @@ class ConcatStyle(BaseTransform):
         img_style = results['img_style']
 
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        # 将单通道灰度图复制为三通道
+
         img = np.stack([gray, gray, gray], axis=2)
 
-        # 检查两者的形状是否一致（除了通道维度）
-        if img.shape!= img_style.shape:
-            # 使用 PIL 将 img_style 调整为 img 的尺寸
-            img_style_resized = Image.fromarray(img_style.astype(np.uint8))  # 转为 PIL 图像
-            img_style_resized = img_style_resized.resize((img.shape[1], img.shape[0]), Image.BILINEAR)  # 调整大小
-            img_style = np.array(img_style_resized).astype(np.float32)   # 转回 NumPy 数组
 
-        # 在通道维度（第 0 维）拼接
+        if img.shape!= img_style.shape:
+
+            img_style_resized = Image.fromarray(img_style.astype(np.uint8))
+            img_style_resized = img_style_resized.resize((img.shape[1], img.shape[0]), Image.BILINEAR)
+            img_style = np.array(img_style_resized).astype(np.float32)
+
+
         img_combined = np.concatenate([img, img_style], axis=2)
 
-        # 将拼接后的图像存回 results
+
         results['img'] = img_combined
         return results
 
     def __repr__(self):
         repr_str = self.__class__.__name__
         return repr_str
-    
+
 @TRANSFORMS.register_module()
 class PhotoMetricDistortionWithStyleStrong(BaseTransform):
-    """Apply photometric distortion to image sequentially, every transformation
-    is applied with a probability of 0.5. The position of random contrast is in
-    second or second to last.
 
-    1. random brightness
-    2. random contrast (mode 0)
-    3. convert color from BGR to HSV
-    4. random saturation
-    5. random hue
-    6. convert color from HSV to BGR
-    7. random contrast (mode 1)
-
-    Required Keys:
-
-    - img
-
-    Modified Keys:
-
-    - img
-
-    Args:
-        brightness_delta (int): delta of brightness.
-        contrast_range (tuple): range of contrast.
-        saturation_range (tuple): range of saturation.
-        hue_delta (int): delta of hue.
-    """
 
     def __init__(self,
                  brightness_delta: int = 64,
                  contrast_range: Sequence[float] = (0.3, 2.0),
                  saturation_range: Sequence[float] = (0.3, 2.0),
                  hue_delta: int = 36,
-                 noise_std: float = 25.0,  # 噪声强度
-                 aug_prob: float = 0.5,  # 每个增强的触发概率
+                 noise_std: float = 25.0,
+                 aug_prob: float = 0.5,
                  seed: Optional[int] = None):
         self.brightness_delta = brightness_delta
         self.contrast_lower, self.contrast_upper = contrast_range
@@ -1180,28 +767,28 @@ class PhotoMetricDistortionWithStyleStrong(BaseTransform):
             random.seed(seed)
 
     def convert(self, img: np.ndarray, alpha: float = 1, beta: float = 0) -> np.ndarray:
-        """Adjust contrast or brightness of the image."""
+
         img = img.astype(np.float32) * alpha + beta
         return np.clip(img, 0, 255).astype(np.uint8)
 
     def brightness(self, img: np.ndarray) -> np.ndarray:
-        """Randomly adjust brightness."""
-        if random.random() < self.aug_prob:  # Apply based on probability
+
+        if random.random() < self.aug_prob:
             beta = random.uniform(-self.brightness_delta, self.brightness_delta)
             img = self.convert(img, beta=beta)
         return img
 
     def contrast(self, img: np.ndarray) -> np.ndarray:
-        """Randomly adjust contrast."""
-        if random.random() < self.aug_prob:  # Apply based on probability
+
+        if random.random() < self.aug_prob:
             alpha = random.uniform(self.contrast_lower, self.contrast_upper)
             img = self.convert(img, alpha=alpha)
         return img
 
     def saturation(self, img: np.ndarray) -> np.ndarray:
-        """Randomly adjust saturation."""
+
         img_hsv = mmcv.bgr2hsv(img)
-        if random.random() < self.aug_prob:  # Apply based on probability
+        if random.random() < self.aug_prob:
             img_hsv[:, :, 1] = self.convert(
                 img_hsv[:, :, 1], alpha=random.uniform(self.saturation_lower, self.saturation_upper)
             )
@@ -1209,32 +796,32 @@ class PhotoMetricDistortionWithStyleStrong(BaseTransform):
         return img
 
     def hue(self, img: np.ndarray) -> np.ndarray:
-        """Randomly adjust hue."""
+
         img_hsv = mmcv.bgr2hsv(img)
-        if random.random() < self.aug_prob:  # Apply based on probability
+        if random.random() < self.aug_prob:
             img_hsv[:, :, 0] = (img_hsv[:, :, 0].astype(int) +
                                 random.randint(-self.hue_delta, self.hue_delta)) % 180
         img = mmcv.hsv2bgr(img_hsv)
         return img
 
     def add_noise(self, img: np.ndarray) -> np.ndarray:
-        """Add Gaussian noise to the image."""
-        if random.random() < self.aug_prob:  # Apply based on probability
+
+        if random.random() < self.aug_prob:
             noise = random.normal(0, self.noise_std, img.shape).astype(np.float32)
             img = img.astype(np.float32) + noise
         return np.clip(img, 0, 255).astype(np.uint8)
-    
+
     def apply_augmentations(self, img: np.ndarray) -> np.ndarray:
-        """Randomly apply additional augmentations."""
-        num_augmentations = random.randint(1, len(self.augmentations))  # Random number of augmentations
-        chosen_augmentations = sample(self.augmentations,num_augmentations)  # 使用正确的 sample 方法
+
+        num_augmentations = random.randint(1, len(self.augmentations))
+        chosen_augmentations = sample(self.augmentations,num_augmentations)
         augmentations = Compose(chosen_augmentations)
         img = augmentations(image=img)['image']
         return img
-    
+
     def apply_transform(self, img: np.ndarray) -> np.ndarray:
-        """Apply photometric distortion, noise, and additional augmentation."""
-        # Photometric transformations
+
+
         img = self.brightness(img)
         mode = random.randint(0, 1)
         if mode == 1:
@@ -1244,41 +831,34 @@ class PhotoMetricDistortionWithStyleStrong(BaseTransform):
         if mode == 0:
             img = self.contrast(img)
 
-        # Add Gaussian noise
+
         img = self.add_noise(img)
 
-        # Apply additional augmentations
-        if random.random() < self.aug_prob:  # Apply based on probability
+
+        if random.random() < self.aug_prob:
             img = self.apply_augmentations(img)
 
         return img
-    
+
     def transform(self, results: dict) -> dict:
-        """Transform function to perform photometric distortion on images.
 
-        Args:
-            results (dict): Result dict from loading pipeline.
-
-        Returns:
-            dict: Result dict with images distorted.
-        """
 
         img = results['img']
         img_style = results['img_style']
 
         img = self.apply_transform(img)
 
-        # 检查两者的形状是否一致（除了通道维度）
-        if img.shape!= img_style.shape:
-            # 使用 PIL 将 img_style 调整为 img 的尺寸
-            img_style_resized = Image.fromarray(img_style.astype(np.uint8))  # 转为 PIL 图像
-            img_style_resized = img_style_resized.resize((img.shape[1], img.shape[0]), Image.BILINEAR)  # 调整大小
-            img_style = np.array(img_style_resized).astype(np.float32)   # 转回 NumPy 数组
 
-        # 在通道维度（第 0 维）拼接
+        if img.shape!= img_style.shape:
+
+            img_style_resized = Image.fromarray(img_style.astype(np.uint8))
+            img_style_resized = img_style_resized.resize((img.shape[1], img.shape[0]), Image.BILINEAR)
+            img_style = np.array(img_style_resized).astype(np.float32)
+
+
         img_combined = np.concatenate([img, img_style], axis=2)
 
-        # 将拼接后的图像存回 results
+
         results['img'] = img_combined
         return results
 
@@ -1291,43 +871,10 @@ class PhotoMetricDistortionWithStyleStrong(BaseTransform):
                      f'{self.saturation_upper}), '
                      f'hue_delta={self.hue_delta})')
         return repr_str
-    
+
 @TRANSFORMS.register_module()
 class RandomCutOut(BaseTransform):
-    """CutOut operation.
 
-    Randomly drop some regions of image used in
-    `Cutout <https://arxiv.org/abs/1708.04552>`_.
-
-    Required Keys:
-
-    - img
-    - gt_seg_map
-
-    Modified Keys:
-
-    - img
-    - gt_seg_map
-
-    Args:
-        prob (float): cutout probability.
-        n_holes (int | tuple[int, int]): Number of regions to be dropped.
-            If it is given as a list, number of holes will be randomly
-            selected from the closed interval [`n_holes[0]`, `n_holes[1]`].
-        cutout_shape (tuple[int, int] | list[tuple[int, int]]): The candidate
-            shape of dropped regions. It can be `tuple[int, int]` to use a
-            fixed cutout shape, or `list[tuple[int, int]]` to randomly choose
-            shape from the list.
-        cutout_ratio (tuple[float, float] | list[tuple[float, float]]): The
-            candidate ratio of dropped regions. It can be `tuple[float, float]`
-            to use a fixed ratio or `list[tuple[float, float]]` to randomly
-            choose ratio from the list. Please note that `cutout_shape`
-            and `cutout_ratio` cannot be both given at the same time.
-        fill_in (tuple[float, float, float] | tuple[int, int, int]): The value
-            of pixel to fill in the dropped regions. Default: (0, 0, 0).
-        seg_fill_in (int): The labels of pixel to fill in the dropped regions.
-            If seg_fill_in is None, skip. Default: None.
-    """
 
     def __init__(self,
                  prob,
@@ -1381,7 +928,7 @@ class RandomCutOut(BaseTransform):
         return cutout, n_holes, x1_lst, y1_lst, index_lst
 
     def transform(self, results: dict) -> dict:
-        """Call function to drop some regions of image."""
+
         cutout, n_holes, x1_lst, y1_lst, index_lst = self.generate_patches(
             results)
         if cutout:
@@ -1419,25 +966,7 @@ class RandomCutOut(BaseTransform):
 
 @TRANSFORMS.register_module()
 class RandomRotFlip(BaseTransform):
-    """Rotate and flip the image & seg or just rotate the image & seg.
 
-    Required Keys:
-
-    - img
-    - gt_seg_map
-
-    Modified Keys:
-
-    - img
-    - gt_seg_map
-
-    Args:
-        rotate_prob (float): The probability of rotate image.
-        flip_prob (float): The probability of rotate&flip image.
-        degree (float, tuple[float]): Range of degrees to select from. If
-            degree is a number instead of tuple like (min, max),
-            the range of degree will be (``-degree``, ``+degree``)
-    """
 
     def __init__(self, rotate_prob=0.5, flip_prob=0.5, degree=(-20, 20)):
         self.rotate_prob = rotate_prob
@@ -1470,15 +999,8 @@ class RandomRotFlip(BaseTransform):
         return results
 
     def transform(self, results: dict) -> dict:
-        """Call function to rotate or rotate & flip image, semantic
-        segmentation maps.
 
-        Args:
-            results (dict): Result dict from loading pipeline.
 
-        Returns:
-            dict: Rotated or rotated & flipped results.
-        """
         rotate_flag = 0
         if random.random() < self.rotate_prob:
             results = self.random_rotate(results)
@@ -1497,77 +1019,23 @@ class RandomRotFlip(BaseTransform):
 
 @TRANSFORMS.register_module()
 class RandomFlip(MMCV_RandomFlip):
-    """Flip the image & bbox & segmentation map. Added or Updated
-    keys: flip, flip_direction, img, gt_bboxes, gt_seg_map, and gt_depth_map.
-    There are 3 flip modes:
 
-    - ``prob`` is float, ``direction`` is string: the image will be
-      ``direction``ly flipped with probability of ``prob`` .
-      E.g., ``prob=0.5``, ``direction='horizontal'``,
-      then image will be horizontally flipped with probability of 0.5.
-
-    - ``prob`` is float, ``direction`` is list of string: the image will
-      be ``direction[i]``ly flipped with probability of
-      ``prob/len(direction)``.
-      E.g., ``prob=0.5``, ``direction=['horizontal', 'vertical']``,
-      then image will be horizontally flipped with probability of 0.25,
-      vertically with probability of 0.25.
-
-    - ``prob`` is list of float, ``direction`` is list of string:
-      given ``len(prob) == len(direction)``, the image will
-      be ``direction[i]``ly flipped with probability of ``prob[i]``.
-      E.g., ``prob=[0.3, 0.5]``, ``direction=['horizontal',
-      'vertical']``, then image will be horizontally flipped with
-      probability of 0.3, vertically with probability of 0.5.
-
-    Required Keys:
-
-    - img
-    - gt_bboxes (optional)
-    - gt_seg_map (optional)
-    - gt_depth_map (optional)
-
-    Modified Keys:
-
-    - img
-    - gt_bboxes (optional)
-    - gt_seg_map (optional)
-    - gt_depth_map (optional)
-
-    Added Keys:
-
-    - flip
-    - flip_direction
-    - swap_seg_labels (optional)
-
-    Args:
-        prob (float | list[float], optional): The flipping probability.
-            Defaults to None.
-        direction(str | list[str]): The flipping direction. Options
-            If input is a list, the length must equal ``prob``. Each
-            element in ``prob`` indicates the flip probability of
-            corresponding direction. Defaults to 'horizontal'.
-        swap_seg_labels (list, optional): The label pair need to be swapped
-            for ground truth, like 'left arm' and 'right arm' need to be
-            swapped after horizontal flipping. For example, ``[(1, 5)]``,
-            where 1/5 is the label of the left/right arm. Defaults to None.
-    """
 
     def _flip(self, results: dict) -> None:
-        """Flip images, bounding boxes and semantic segmentation map."""
-        # flip image
+
+
         results['img'] = mmcv.imflip(
             results['img'], direction=results['flip_direction'])
 
         img_shape = results['img'].shape[:2]
 
-        # flip bboxes
+
         if results.get('gt_bboxes', None) is not None:
             results['gt_bboxes'] = self._flip_bbox(results['gt_bboxes'],
                                                    img_shape,
                                                    results['flip_direction'])
 
-        # flip seg map
+
         for key in results.get('seg_fields', []):
             if results.get(key, None) is not None:
                 results[key] = self._flip_seg_map(
@@ -1577,53 +1045,10 @@ class RandomFlip(MMCV_RandomFlip):
 
 @TRANSFORMS.register_module()
 class Resize(MMCV_Resize):
-    """Resize images & seg & depth map.
 
-    This transform resizes the input image according to ``scale`` or
-    ``scale_factor``. Seg map, depth map and other relative annotations are
-    then resized with the same scale factor.
-    if ``scale`` and ``scale_factor`` are both set, it will use ``scale`` to
-    resize.
-
-    Required Keys:
-
-    - img
-    - gt_seg_map (optional)
-    - gt_depth_map (optional)
-
-    Modified Keys:
-
-    - img
-    - gt_seg_map
-    - gt_depth_map
-
-    Added Keys:
-
-    - scale
-    - scale_factor
-    - keep_ratio
-
-    Args:
-        scale (int or tuple): Images scales for resizing. Defaults to None
-        scale_factor (float or tuple[float]): Scale factors for resizing.
-            Defaults to None.
-        keep_ratio (bool): Whether to keep the aspect ratio when resizing the
-            image. Defaults to False.
-        clip_object_border (bool): Whether to clip the objects
-            outside the border of the image. In some dataset like MOT17, the gt
-            bboxes are allowed to cross the border of images. Therefore, we
-            don't need to clip the gt bboxes in these cases. Defaults to True.
-        backend (str): Image resize backend, choices are 'cv2' and 'pillow'.
-            These two backends generates slightly different results. Defaults
-            to 'cv2'.
-        interpolation (str): Interpolation method, accepted values are
-            "nearest", "bilinear", "bicubic", "area", "lanczos" for 'cv2'
-            backend, "nearest", "bilinear" for 'pillow' backend. Defaults
-            to 'bilinear'.
-    """
 
     def _resize_seg(self, results: dict) -> None:
-        """Resize semantic segmentation map with ``results['scale']``."""
+
         for seg_key in results.get('seg_fields', []):
             if results.get(seg_key, None) is not None:
                 if self.keep_ratio:
@@ -1642,53 +1067,7 @@ class Resize(MMCV_Resize):
 
 @TRANSFORMS.register_module()
 class StyleResize(BaseTransform):
-    """Resize images & bbox & seg & keypoints.
 
-    This transform resizes the input image according to ``scale`` or
-    ``scale_factor``. Bboxes, seg map and keypoints are then resized with the
-    same scale factor.
-    if ``scale`` and ``scale_factor`` are both set, it will use ``scale`` to
-    resize.
-
-    Required Keys:
-
-    - img
-    - gt_bboxes (optional)
-    - gt_seg_map (optional)
-    - gt_keypoints (optional)
-
-    Modified Keys:
-
-    - img
-    - gt_bboxes
-    - gt_seg_map
-    - gt_keypoints
-    - img_shape
-
-    Added Keys:
-
-    - scale
-    - scale_factor
-    - keep_ratio
-
-    Args:
-        scale (int or tuple): Images scales for resizing. Defaults to None
-        scale_factor (float or tuple[float]): Scale factors for resizing.
-            Defaults to None.
-        keep_ratio (bool): Whether to keep the aspect ratio when resizing the
-            image. Defaults to False.
-        clip_object_border (bool): Whether to clip the objects
-            outside the border of the image. In some dataset like MOT17, the gt
-            bboxes are allowed to cross the border of images. Therefore, we
-            don't need to clip the gt bboxes in these cases. Defaults to True.
-        backend (str): Image resize backend, choices are 'cv2' and 'pillow'.
-            These two backends generates slightly different results. Defaults
-            to 'cv2'.
-        interpolation (str): Interpolation method, accepted values are
-            "nearest", "bilinear", "bicubic", "area", "lanczos" for 'cv2'
-            backend, "nearest", "bilinear" for 'pillow' backend. Defaults
-            to 'bilinear'.
-    """
 
     def __init__(self,
                  scale: Optional[Union[int, Tuple[int, int]]] = None,
@@ -1726,7 +1105,7 @@ class StyleResize(BaseTransform):
                 f'get {type(scale_factor)}')
 
     def _resize_img(self, results: dict) -> None:
-        """Resize images with ``results['scale']``."""
+
 
         if results.get('img_style', None) is not None:
             if self.keep_ratio:
@@ -1736,8 +1115,8 @@ class StyleResize(BaseTransform):
                     interpolation=self.interpolation,
                     return_scale=True,
                     backend=self.backend)
-                # the w_scale and h_scale has minor difference
-                # a real fix should be done in the mmcv.imrescale in the future
+
+
                 new_h, new_w = img.shape[:2]
                 h, w = results['img_style'].shape[:2]
                 w_scale = new_w / w
@@ -1753,23 +1132,14 @@ class StyleResize(BaseTransform):
 
 
     def transform(self, results: dict) -> dict:
-        """Transform function to resize images, bounding boxes, semantic
-        segmentation map and keypoints.
 
-        Args:
-            results (dict): Result dict from loading pipeline.
-        Returns:
-            dict: Resized results, 'img', 'gt_bboxes', 'gt_seg_map',
-            'gt_keypoints', 'scale', 'scale_factor', 'img_shape',
-            and 'keep_ratio' keys are updated in result dict.
-        """
 
         if self.scale:
             results['scale'] = self.scale
         else:
             img_shape = results['img_style'].shape[:2]
             results['scale'] = _scale_size(img_shape[::-1],
-                                           self.scale_factor)  # type: ignore
+                                           self.scale_factor)
         self._resize_img(results)
         return results
 
@@ -1786,59 +1156,7 @@ class StyleResize(BaseTransform):
 
 @TRANSFORMS.register_module()
 class RandomMosaic(BaseTransform):
-    """Mosaic augmentation. Given 4 images, mosaic transform combines them into
-    one output image. The output image is composed of the parts from each sub-
-    image.
 
-    .. code:: text
-
-                        mosaic transform
-                           center_x
-                +------------------------------+
-                |       pad        |  pad      |
-                |      +-----------+           |
-                |      |           |           |
-                |      |  image1   |--------+  |
-                |      |           |        |  |
-                |      |           | image2 |  |
-     center_y   |----+-------------+-----------|
-                |    |   cropped   |           |
-                |pad |   image3    |  image4   |
-                |    |             |           |
-                +----|-------------+-----------+
-                     |             |
-                     +-------------+
-
-     The mosaic transform steps are as follows:
-         1. Choose the mosaic center as the intersections of 4 images
-         2. Get the left top image according to the index, and randomly
-            sample another 3 images from the custom dataset.
-         3. Sub image will be cropped if image is larger than mosaic patch
-
-    Required Keys:
-
-    - img
-    - gt_seg_map
-    - mix_results
-
-    Modified Keys:
-
-    - img
-    - img_shape
-    - ori_shape
-    - gt_seg_map
-
-    Args:
-        prob (float): mosaic probability.
-        img_scale (Sequence[int]): Image size after mosaic pipeline of
-            a single image. The size of the output image is four times
-            that of a single image. The output image comprises 4 single images.
-            Default: (640, 640).
-        center_ratio_range (Sequence[float]): Center ratio range of mosaic
-            output. Default: (0.5, 1.5).
-        pad_val (int): Pad value. Default: 0.
-        seg_pad_val (int): Pad value of segmentation map. Default: 255.
-    """
 
     def __init__(self,
                  prob,
@@ -1859,14 +1177,8 @@ class RandomMosaic(BaseTransform):
         return np.random.rand() < self.prob
 
     def transform(self, results: dict) -> dict:
-        """Call function to make a mosaic of image.
 
-        Args:
-            results (dict): Result dict.
 
-        Returns:
-            dict: Result dict with mosaic transformed.
-        """
         mosaic = self.do_mosaic()
         if mosaic:
             results = self._mosaic_transform_img(results)
@@ -1874,21 +1186,14 @@ class RandomMosaic(BaseTransform):
         return results
 
     def get_indices(self, dataset: MultiImageMixDataset) -> list:
-        """Call function to collect indices.
 
-        Args:
-            dataset (:obj:`MultiImageMixDataset`): The dataset.
-
-        Returns:
-            list: indices.
-        """
 
         indices = [random.randint(0, len(dataset)) for _ in range(3)]
         return indices
 
     @cache_randomness
     def generate_mosaic_center(self):
-        # mosaic center x, y
+
         center_x = int(
             random.uniform(*self.center_ratio_range) * self.img_scale[1])
         center_y = int(
@@ -1896,14 +1201,7 @@ class RandomMosaic(BaseTransform):
         return center_x, center_y
 
     def _mosaic_transform_img(self, results: dict) -> dict:
-        """Mosaic transform function.
 
-        Args:
-            results (dict): Result dict.
-
-        Returns:
-            dict: Updated result dict.
-        """
 
         assert 'mix_results' in results
         if len(results['img'].shape) == 3:
@@ -1918,7 +1216,7 @@ class RandomMosaic(BaseTransform):
                 self.pad_val,
                 dtype=results['img'].dtype)
 
-        # mosaic center x, y
+
         self.center_x, self.center_y = self.generate_mosaic_center()
         center_position = (self.center_x, self.center_y)
 
@@ -1931,19 +1229,19 @@ class RandomMosaic(BaseTransform):
 
             img_i = result_patch['img']
             h_i, w_i = img_i.shape[:2]
-            # keep_ratio resize
+
             scale_ratio_i = min(self.img_scale[0] / h_i,
                                 self.img_scale[1] / w_i)
             img_i = mmcv.imresize(
                 img_i, (int(w_i * scale_ratio_i), int(h_i * scale_ratio_i)))
 
-            # compute the combine parameters
+
             paste_coord, crop_coord = self._mosaic_combine(
                 loc, center_position, img_i.shape[:2][::-1])
             x1_p, y1_p, x2_p, y2_p = paste_coord
             x1_c, y1_c, x2_c, y2_c = crop_coord
 
-            # crop and paste image
+
             mosaic_img[y1_p:y2_p, x1_p:x2_p] = img_i[y1_c:y2_c, x1_c:x2_c]
 
         results['img'] = mosaic_img
@@ -1953,14 +1251,7 @@ class RandomMosaic(BaseTransform):
         return results
 
     def _mosaic_transform_seg(self, results: dict) -> dict:
-        """Mosaic transform function for label annotations.
 
-        Args:
-            results (dict): Result dict.
-
-        Returns:
-            dict: Updated result dict.
-        """
 
         assert 'mix_results' in results
         for key in results.get('seg_fields', []):
@@ -1969,7 +1260,7 @@ class RandomMosaic(BaseTransform):
                 self.seg_pad_val,
                 dtype=results[key].dtype)
 
-            # mosaic center x, y
+
             center_position = (self.center_x, self.center_y)
 
             loc_strs = ('top_left', 'top_right', 'bottom_left', 'bottom_right')
@@ -1981,7 +1272,7 @@ class RandomMosaic(BaseTransform):
 
                 gt_seg_i = result_patch[key]
                 h_i, w_i = gt_seg_i.shape[:2]
-                # keep_ratio resize
+
                 scale_ratio_i = min(self.img_scale[0] / h_i,
                                     self.img_scale[1] / w_i)
                 gt_seg_i = mmcv.imresize(
@@ -1989,13 +1280,13 @@ class RandomMosaic(BaseTransform):
                     (int(w_i * scale_ratio_i), int(h_i * scale_ratio_i)),
                     interpolation='nearest')
 
-                # compute the combine parameters
+
                 paste_coord, crop_coord = self._mosaic_combine(
                     loc, center_position, gt_seg_i.shape[:2][::-1])
                 x1_p, y1_p, x2_p, y2_p = paste_coord
                 x1_c, y1_c, x2_c, y2_c = crop_coord
 
-                # crop and paste image
+
                 mosaic_seg[y1_p:y2_p, x1_p:x2_p] = \
                     gt_seg_i[y1_c:y2_c, x1_c:x2_c]
 
@@ -2005,26 +1296,11 @@ class RandomMosaic(BaseTransform):
 
     def _mosaic_combine(self, loc: str, center_position_xy: Sequence[float],
                         img_shape_wh: Sequence[int]) -> tuple:
-        """Calculate global coordinate of mosaic image and local coordinate of
-        cropped sub-image.
 
-        Args:
-            loc (str): Index for the sub-image, loc in ('top_left',
-              'top_right', 'bottom_left', 'bottom_right').
-            center_position_xy (Sequence[float]): Mixing center for 4 images,
-                (x, y).
-            img_shape_wh (Sequence[int]): Width and height of sub-image
-
-        Returns:
-            tuple[tuple[float]]: Corresponding coordinate of pasting and
-                cropping
-                - paste_coord (tuple): paste corner coordinate in mosaic image.
-                - crop_coord (tuple): crop corner coordinate in mosaic image.
-        """
 
         assert loc in ('top_left', 'top_right', 'bottom_left', 'bottom_right')
         if loc == 'top_left':
-            # index0 to top left part of image
+
             x1, y1, x2, y2 = max(center_position_xy[0] - img_shape_wh[0], 0), \
                              max(center_position_xy[1] - img_shape_wh[1], 0), \
                              center_position_xy[0], \
@@ -2033,7 +1309,7 @@ class RandomMosaic(BaseTransform):
                 y2 - y1), img_shape_wh[0], img_shape_wh[1]
 
         elif loc == 'top_right':
-            # index1 to top right part of image
+
             x1, y1, x2, y2 = center_position_xy[0], \
                              max(center_position_xy[1] - img_shape_wh[1], 0), \
                              min(center_position_xy[0] + img_shape_wh[0],
@@ -2043,7 +1319,7 @@ class RandomMosaic(BaseTransform):
                 img_shape_wh[0], x2 - x1), img_shape_wh[1]
 
         elif loc == 'bottom_left':
-            # index2 to bottom left part of image
+
             x1, y1, x2, y2 = max(center_position_xy[0] - img_shape_wh[0], 0), \
                              center_position_xy[1], \
                              center_position_xy[0], \
@@ -2053,7 +1329,7 @@ class RandomMosaic(BaseTransform):
                 y2 - y1, img_shape_wh[1])
 
         else:
-            # index3 to bottom right part of image
+
             x1, y1, x2, y2 = center_position_xy[0], \
                              center_position_xy[1], \
                              min(center_position_xy[0] + img_shape_wh[0],
@@ -2078,26 +1354,7 @@ class RandomMosaic(BaseTransform):
 
 @TRANSFORMS.register_module()
 class GenerateEdge(BaseTransform):
-    """Generate Edge for CE2P approach.
 
-    Edge will be used to calculate loss of
-    `CE2P <https://arxiv.org/abs/1809.05996>`_.
-
-    Modified from https://github.com/liutinglt/CE2P/blob/master/dataset/target_generation.py # noqa:E501
-
-    Required Keys:
-
-        - img_shape
-        - gt_seg_map
-
-    Added Keys:
-        - gt_edge_map (np.ndarray, uint8): The edge annotation generated from the
-            seg map by extracting border between different semantics.
-
-    Args:
-        edge_width (int): The width of edge. Default to 3.
-        ignore_index (int): Index that will be ignored. Default to 255.
-    """
 
     def __init__(self, edge_width: int = 3, ignore_index: int = 255) -> None:
         super().__init__()
@@ -2105,34 +1362,28 @@ class GenerateEdge(BaseTransform):
         self.ignore_index = ignore_index
 
     def transform(self, results: Dict) -> Dict:
-        """Call function to generate edge from segmentation map.
 
-        Args:
-            results (dict): Result dict.
 
-        Returns:
-            dict: Result dict with edge mask.
-        """
         h, w = results['img_shape']
         edge = np.zeros((h, w), dtype=np.uint8)
         seg_map = results['gt_seg_map']
 
-        # down
+
         edge_down = edge[1:h, :]
         edge_down[(seg_map[1:h, :] != seg_map[:h - 1, :])
                   & (seg_map[1:h, :] != self.ignore_index) &
                   (seg_map[:h - 1, :] != self.ignore_index)] = 1
-        # left
+
         edge_left = edge[:, :w - 1]
         edge_left[(seg_map[:, :w - 1] != seg_map[:, 1:w])
                   & (seg_map[:, :w - 1] != self.ignore_index) &
                   (seg_map[:, 1:w] != self.ignore_index)] = 1
-        # up_left
+
         edge_upleft = edge[:h - 1, :w - 1]
         edge_upleft[(seg_map[:h - 1, :w - 1] != seg_map[1:h, 1:w])
                     & (seg_map[:h - 1, :w - 1] != self.ignore_index) &
                     (seg_map[1:h, 1:w] != self.ignore_index)] = 1
-        # up_right
+
         edge_upright = edge[:h - 1, 1:w]
         edge_upright[(seg_map[:h - 1, 1:w] != seg_map[1:h, :w - 1])
                      & (seg_map[:h - 1, 1:w] != self.ignore_index) &
@@ -2156,40 +1407,7 @@ class GenerateEdge(BaseTransform):
 
 @TRANSFORMS.register_module()
 class ResizeShortestEdge(BaseTransform):
-    """Resize the image and mask while keeping the aspect ratio unchanged.
 
-    Modified from https://github.com/facebookresearch/detectron2/blob/main/detectron2/data/transforms/augmentation_impl.py#L130 # noqa:E501
-    Copyright (c) Facebook, Inc. and its affiliates.
-    Licensed under the Apache-2.0 License
-
-    This transform attempts to scale the shorter edge to the given
-    `scale`, as long as the longer edge does not exceed `max_size`.
-    If `max_size` is reached, then downscale so that the longer
-    edge does not exceed `max_size`.
-
-    Required Keys:
-
-    - img
-    - gt_seg_map (optional)
-
-    Modified Keys:
-
-    - img
-    - img_shape
-    - gt_seg_map (optional))
-
-    Added Keys:
-
-    - scale
-    - scale_factor
-    - keep_ratio
-
-
-    Args:
-        scale (Union[int, Tuple[int, int]]): The target short edge length.
-            If it's tuple, will select the min value as the short edge length.
-        max_size (int): The maximum allowed longest edge length.
-    """
 
     def __init__(self, scale: Union[int, Tuple[int, int]],
                  max_size: int) -> None:
@@ -2197,7 +1415,7 @@ class ResizeShortestEdge(BaseTransform):
         self.scale = scale
         self.max_size = max_size
 
-        # Create a empty Resize object
+
         self.resize = TRANSFORMS.build({
             'type': 'Resize',
             'scale': 0,
@@ -2205,14 +1423,8 @@ class ResizeShortestEdge(BaseTransform):
         })
 
     def _get_output_shape(self, img, short_edge_length) -> Tuple[int, int]:
-        """Compute the target image shape with the given `short_edge_length`.
 
-        Args:
-            img (np.ndarray): The input image.
-            short_edge_length (Union[int, Tuple[int, int]]): The target short
-                edge length. If it's tuple, will select the min value as the
-                short edge length.
-        """
+
         h, w = img.shape[:2]
         if isinstance(short_edge_length, int):
             size = short_edge_length * 1.0
@@ -2240,29 +1452,7 @@ class ResizeShortestEdge(BaseTransform):
 
 @TRANSFORMS.register_module()
 class BioMedical3DRandomCrop(BaseTransform):
-    """Crop the input patch for medical image & segmentation mask.
 
-    Required Keys:
-
-    - img (np.ndarray): Biomedical image with shape (N, Z, Y, X),
-        N is the number of modalities, and data type is float32.
-    - gt_seg_map (np.ndarray, optional): Biomedical semantic segmentation mask
-        with shape (Z, Y, X).
-
-    Modified Keys:
-
-        - img
-        - img_shape
-        - gt_seg_map (optional)
-
-    Args:
-        crop_shape (Union[int, Tuple[int, int, int]]):  Expected size after
-            cropping with the format of (z, y, x). If set to an integer,
-            then cropping width and height are equal to this integer.
-        keep_foreground (bool): If keep_foreground is True, it will sample a
-            voxel of foreground classes randomly, and will take it as the
-            center of the crop bounding-box. Default to True.
-    """
 
     def __init__(self,
                  crop_shape: Union[int, Tuple[int, int, int]],
@@ -2271,7 +1461,7 @@ class BioMedical3DRandomCrop(BaseTransform):
         assert isinstance(crop_shape, int) or (
             isinstance(crop_shape, tuple) and len(crop_shape) == 3
         ), 'The expected crop_shape is an integer, or a tuple containing '
-        'three integers'
+
 
         if isinstance(crop_shape, int):
             crop_shape = (crop_shape, crop_shape, crop_shape)
@@ -2280,26 +1470,19 @@ class BioMedical3DRandomCrop(BaseTransform):
         self.keep_foreground = keep_foreground
 
     def random_sample_location(self, seg_map: np.ndarray) -> dict:
-        """sample foreground voxel when keep_foreground is True.
 
-        Args:
-            seg_map (np.ndarray): gt seg map.
 
-        Returns:
-            dict: Coordinates of selected foreground voxel.
-        """
         num_samples = 10000
-        # at least 1% of the class voxels need to be selected,
-        # otherwise it may be too sparse
+
+
         min_percent_coverage = 0.01
         class_locs = {}
         foreground_classes = []
         all_classes = np.unique(seg_map)
         for c in all_classes:
             if c == 0:
-                # to avoid the segmentation mask full of background 0
-                # and the class_locs is just void dictionary {} when it return
-                # there add a void list for background 0.
+
+
                 class_locs[c] = []
             else:
                 all_locs = np.argwhere(seg_map == c)
@@ -2324,14 +1507,8 @@ class BioMedical3DRandomCrop(BaseTransform):
 
     def random_generate_crop_bbox(self, margin_z: int, margin_y: int,
                                   margin_x: int) -> tuple:
-        """Randomly get a crop bounding box.
 
-        Args:
-            seg_map (np.ndarray): Ground truth segmentation map.
 
-        Returns:
-            tuple: Coordinates of the cropped image.
-        """
         offset_z = np.random.randint(0, margin_z + 1)
         offset_y = np.random.randint(0, margin_y + 1)
         offset_x = np.random.randint(0, margin_x + 1)
@@ -2342,27 +1519,14 @@ class BioMedical3DRandomCrop(BaseTransform):
         return crop_z1, crop_z2, crop_y1, crop_y2, crop_x1, crop_x2
 
     def generate_margin(self, results: dict) -> tuple:
-        """Generate margin of crop bounding-box.
 
-        If keep_foreground is True, it will sample a voxel of foreground
-        classes randomly, and will take it as the center of the bounding-box,
-        and return the margin between of the bounding-box and image.
-        If keep_foreground is False, it will return the difference from crop
-        shape and image shape.
-
-        Args:
-            results (dict): Result dict from loading pipeline.
-
-        Returns:
-            tuple: The margin for 3 dimensions of crop bounding-box and image.
-        """
 
         seg_map = results['gt_seg_map']
         if self.keep_foreground:
             selected_voxel = self.random_sample_location(seg_map)
             if selected_voxel is None:
-                # this only happens if some image does not contain
-                # foreground voxels at all
+
+
                 warnings.warn(f'case does not contain any foreground classes'
                               f': {results["img_path"]}')
                 margin_z = max(seg_map.shape[0] - self.crop_shape[0], 0)
@@ -2386,45 +1550,30 @@ class BioMedical3DRandomCrop(BaseTransform):
         return margin_z, margin_y, margin_x
 
     def crop(self, img: np.ndarray, crop_bbox: tuple) -> np.ndarray:
-        """Crop from ``img``
 
-        Args:
-            img (np.ndarray): Original input image.
-            crop_bbox (tuple): Coordinates of the cropped image.
 
-        Returns:
-            np.ndarray: The cropped image.
-        """
         crop_z1, crop_z2, crop_y1, crop_y2, crop_x1, crop_x2 = crop_bbox
         if len(img.shape) == 3:
-            # crop seg map
+
             img = img[crop_z1:crop_z2, crop_y1:crop_y2, crop_x1:crop_x2]
         else:
-            # crop image
+
             assert len(img.shape) == 4
             img = img[:, crop_z1:crop_z2, crop_y1:crop_y2, crop_x1:crop_x2]
         return img
 
     def transform(self, results: dict) -> dict:
-        """Transform function to randomly crop images, semantic segmentation
-        maps.
 
-        Args:
-            results (dict): Result dict from loading pipeline.
 
-        Returns:
-            dict: Randomly cropped results, 'img_shape' key in result dict is
-                updated according to crop size.
-        """
         margin = self.generate_margin(results)
         crop_bbox = self.random_generate_crop_bbox(*margin)
 
-        # crop the image
+
         img = results['img']
         results['img'] = self.crop(img, crop_bbox)
         results['img_shape'] = results['img'].shape[1:]
 
-        # crop semantic seg
+
         seg_map = results['gt_seg_map']
         results['gt_seg_map'] = self.crop(seg_map, crop_bbox)
 
@@ -2436,28 +1585,7 @@ class BioMedical3DRandomCrop(BaseTransform):
 
 @TRANSFORMS.register_module()
 class BioMedicalGaussianNoise(BaseTransform):
-    """Add random Gaussian noise to image.
 
-    Modified from https://github.com/MIC-DKFZ/batchgenerators/blob/7651ece69faf55263dd582a9f5cbd149ed9c3ad0/batchgenerators/transforms/noise_transforms.py#L53  # noqa:E501
-
-    Copyright (c) German Cancer Research Center (DKFZ)
-    Licensed under the Apache License, Version 2.0
-
-    Required Keys:
-
-    - img (np.ndarray): Biomedical image with shape (N, Z, Y, X),
-            N is the number of modalities, and data type is float32.
-
-    Modified Keys:
-
-    - img
-
-    Args:
-        prob (float): Probability to add Gaussian noise for
-            each sample. Default to 0.1.
-        mean (float): Mean or “centre” of the distribution. Default to 0.0.
-        std (float): Standard deviation of distribution. Default to 0.1.
-    """
 
     def __init__(self,
                  prob: float = 0.1,
@@ -2470,19 +1598,13 @@ class BioMedicalGaussianNoise(BaseTransform):
         self.std = std
 
     def transform(self, results: Dict) -> Dict:
-        """Call function to add random Gaussian noise to image.
 
-        Args:
-            results (dict): Result dict.
 
-        Returns:
-            dict: Result dict with random Gaussian noise.
-        """
         if np.random.rand() < self.prob:
             rand_std = np.random.uniform(0, self.std)
             noise = np.random.normal(
                 self.mean, rand_std, size=results['img'].shape)
-            # noise is float64 array, convert to the results['img'].dtype
+
             noise = noise.astype(results['img'].dtype)
             results['img'] = results['img'] + noise
         return results
@@ -2497,34 +1619,7 @@ class BioMedicalGaussianNoise(BaseTransform):
 
 @TRANSFORMS.register_module()
 class BioMedicalGaussianBlur(BaseTransform):
-    """Add Gaussian blur with random sigma to image.
 
-    Modified from https://github.com/MIC-DKFZ/batchgenerators/blob/7651ece69faf55263dd582a9f5cbd149ed9c3ad0/batchgenerators/transforms/noise_transforms.py#L81 # noqa:E501
-
-    Copyright (c) German Cancer Research Center (DKFZ)
-    Licensed under the Apache License, Version 2.0
-
-    Required Keys:
-
-    - img (np.ndarray): Biomedical image with shape (N, Z, Y, X),
-            N is the number of modalities, and data type is float32.
-
-    Modified Keys:
-
-    - img
-
-    Args:
-        sigma_range (Tuple[float, float]|float): range to randomly
-            select sigma value. Default to (0.5, 1.0).
-        prob (float): Probability to apply Gaussian blur
-            for each sample. Default to 0.2.
-        prob_per_channel  (float): Probability to apply Gaussian blur
-            for each channel (axis N of the image). Default to 0.5.
-        different_sigma_per_channel (bool): whether to use different
-            sigma for each channel (axis N of the image). Default to True.
-        different_sigma_per_axis (bool): whether to use different
-            sigma for axis Z, X and Y of the image. Default to True.
-    """
 
     def __init__(self,
                  sigma_range: Tuple[float, float] = (0.5, 1.0),
@@ -2543,16 +1638,8 @@ class BioMedicalGaussianBlur(BaseTransform):
         self.different_sigma_per_axis = different_sigma_per_axis
 
     def _get_valid_sigma(self, value_range) -> Tuple[float, ...]:
-        """Ensure the `value_range` to be either a single value or a sequence
-        of two values. If the `value_range` is a sequence, generate a random
-        value with `[value_range[0], value_range[1]]` based on uniform
-        sampling.
 
-        Modified from https://github.com/MIC-DKFZ/batchgenerators/blob/7651ece69faf55263dd582a9f5cbd149ed9c3ad0/batchgenerators/augmentations/utils.py#L625 # noqa:E501
 
-        Args:
-            value_range (tuple|list|float|int): the input value range
-        """
         if (isinstance(value_range, (list, tuple))):
             if (value_range[0] == value_range[1]):
                 value = value_range[0]
@@ -2563,17 +1650,13 @@ class BioMedicalGaussianBlur(BaseTransform):
         return value
 
     def _gaussian_blur(self, data_sample: np.ndarray) -> np.ndarray:
-        """Random generate sigma and apply Gaussian Blur to the data
-        Args:
-            data_sample (np.ndarray): data sample with multiple modalities,
-                the data shape is (N, Z, Y, X)
-        """
+
+
         sigma = None
         for c in range(data_sample.shape[0]):
             if np.random.rand() < self.prob_per_channel:
-                # if no `sigma` is generated, generate one
-                # if `self.different_sigma_per_channel` is True,
-                # re-generate random sigma for each channel
+
+
                 if (sigma is None or self.different_sigma_per_channel):
                     if (not self.different_sigma_per_axis):
                         sigma = self._get_valid_sigma(self.sigma_range)
@@ -2582,20 +1665,14 @@ class BioMedicalGaussianBlur(BaseTransform):
                             self._get_valid_sigma(self.sigma_range)
                             for _ in data_sample.shape[1:]
                         ]
-                # apply gaussian filter with `sigma`
+
                 data_sample[c] = gaussian_filter(
                     data_sample[c], sigma, order=0)
         return data_sample
 
     def transform(self, results: Dict) -> Dict:
-        """Call function to add random Gaussian blur to image.
 
-        Args:
-            results (dict): Result dict.
 
-        Returns:
-            dict: Result dict with random Gaussian noise.
-        """
         if np.random.rand() < self.prob:
             results['img'] = self._gaussian_blur(results['img'])
         return results
@@ -2614,32 +1691,7 @@ class BioMedicalGaussianBlur(BaseTransform):
 
 @TRANSFORMS.register_module()
 class BioMedicalRandomGamma(BaseTransform):
-    """Using random gamma correction to process the biomedical image.
 
-    Modified from
-    https://github.com/MIC-DKFZ/batchgenerators/blob/master/batchgenerators/transforms/color_transforms.py#L132 # noqa:E501
-    With licence: Apache 2.0
-
-    Required Keys:
-
-    - img (np.ndarray): Biomedical image with shape (N, Z, Y, X),
-        N is the number of modalities, and data type is float32.
-
-    Modified Keys:
-    - img
-
-    Args:
-        prob (float): The probability to perform this transform. Default: 0.5.
-        gamma_range (Tuple[float]): Range of gamma values. Default: (0.5, 2).
-        invert_image (bool): Whether invert the image before applying gamma
-            augmentation. Default: False.
-        per_channel (bool): Whether perform the transform each channel
-            individually. Default: False
-        retain_stats (bool): Gamma transformation will alter the mean and std
-            of the data in the patch. If retain_stats=True, the data will be
-            transformed to match the mean and standard deviation before gamma
-            augmentation. Default: False.
-    """
 
     def __init__(self,
                  prob: float = 0.5,
@@ -2660,18 +1712,11 @@ class BioMedicalRandomGamma(BaseTransform):
 
     @cache_randomness
     def _do_gamma(self):
-        """Whether do adjust gamma for image."""
+
         return np.random.rand() < self.prob
 
     def _adjust_gamma(self, img: np.array):
-        """Gamma adjustment for image.
 
-        Args:
-            img (np.array): Input image before gamma adjust.
-
-        Returns:
-            np.arrays: Image after gamma adjust.
-        """
 
         if self.invert_image:
             img = -img
@@ -2686,7 +1731,7 @@ class BioMedicalRandomGamma(BaseTransform):
                 gamma = np.random.uniform(
                     max(self.gamma_range[0], 1), self.gamma_range[1])
             img_min = img.min()
-            img_range = img.max() - img_min  # range
+            img_range = img.max() - img_min
             img = np.power(((img - img_min) / float(img_range + 1e-7)),
                            gamma) * img_range + img_min
             if retain_stats_here:
@@ -2706,13 +1751,8 @@ class BioMedicalRandomGamma(BaseTransform):
         return img
 
     def transform(self, results: dict) -> dict:
-        """Call function to perform random gamma correction
-        Args:
-            results (dict): Result dict from loading pipeline.
 
-        Returns:
-            dict: Result dict with random gamma correction performed.
-        """
+
         do_gamma = self._do_gamma()
 
         if do_gamma:
@@ -2733,43 +1773,14 @@ class BioMedicalRandomGamma(BaseTransform):
 
 @TRANSFORMS.register_module()
 class BioMedical3DPad(BaseTransform):
-    """Pad the biomedical 3d image & biomedical 3d semantic segmentation maps.
 
-    Required Keys:
-
-    - img (np.ndarry): Biomedical image with shape (N, Z, Y, X) by default,
-        N is the number of modalities.
-    - gt_seg_map (np.ndarray, optional): Biomedical seg map with shape
-        (Z, Y, X) by default.
-
-    Modified Keys:
-
-    - img (np.ndarry): Biomedical image with shape (N, Z, Y, X) by default,
-        N is the number of modalities.
-    - gt_seg_map (np.ndarray, optional): Biomedical seg map with shape
-        (Z, Y, X) by default.
-
-    Added Keys:
-
-    - pad_shape (Tuple[int, int, int]): The padded shape.
-
-    Args:
-        pad_shape (Tuple[int, int, int]): Fixed padding size.
-            Expected padding shape (Z, Y, X).
-        pad_val (float): Padding value for biomedical image.
-            The padding mode is set to "constant". The value
-            to be filled in padding area. Default: 0.
-        seg_pad_val (int): Padding value for biomedical 3d semantic
-            segmentation maps. The padding mode is set to "constant".
-            The value to be filled in padding area. Default: 0.
-    """
 
     def __init__(self,
                  pad_shape: Tuple[int, int, int],
                  pad_val: float = 0.,
                  seg_pad_val: int = 0) -> None:
 
-        # check pad_shape
+
         assert pad_shape is not None
         if not isinstance(pad_shape, tuple):
             assert len(pad_shape) == 3
@@ -2779,15 +1790,8 @@ class BioMedical3DPad(BaseTransform):
         self.seg_pad_val = seg_pad_val
 
     def _pad_img(self, results: dict) -> None:
-        """Pad images according to ``self.pad_shape``
 
-        Args:
-            results (dict): Result dict from loading pipeline.
 
-        Returns:
-            dict: The dict contains the padded image and shape
-                information.
-        """
         padded_img = self._to_pad(
             results['img'], pad_shape=self.pad_shape, pad_val=self.pad_val)
 
@@ -2795,15 +1799,8 @@ class BioMedical3DPad(BaseTransform):
         results['pad_shape'] = padded_img.shape[1:]
 
     def _pad_seg(self, results: dict) -> None:
-        """Pad semantic segmentation map according to ``self.pad_shape`` if
-        ``gt_seg_map`` is not None in results dict.
 
-        Args:
-            results (dict): Result dict from loading pipeline.
 
-        Returns:
-            dict: Update the padded gt seg map in dict.
-        """
         if results.get('gt_seg_map', None) is not None:
             pad_gt_seg = self._to_pad(
                 results['gt_seg_map'][None, ...],
@@ -2815,20 +1812,8 @@ class BioMedical3DPad(BaseTransform):
     def _to_pad(img: np.ndarray,
                 pad_shape: Tuple[int, int, int],
                 pad_val: Union[int, float] = 0) -> np.ndarray:
-        """Pad the given 3d image to a certain shape with specified padding
-        value.
 
-        Args:
-            img (ndarray): Biomedical image with shape (N, Z, Y, X)
-                to be padded. N is the number of modalities.
-            pad_shape (Tuple[int,int,int]): Expected padding shape (Z, Y, X).
-            pad_val (float, int): Values to be filled in padding areas
-                and the padding_mode is set to 'constant'. Default: 0.
 
-        Returns:
-            ndarray: The padded image.
-        """
-        # compute pad width
         d = max(pad_shape[0] - img.shape[1], 0)
         pad_d = (d // 2, d - d // 2)
         h = max(pad_shape[1] - img.shape[2], 0)
@@ -2842,14 +1827,8 @@ class BioMedical3DPad(BaseTransform):
         return img
 
     def transform(self, results: dict) -> dict:
-        """Call function to pad images, semantic segmentation maps.
 
-        Args:
-            results (dict): Result dict from loading pipeline.
 
-        Returns:
-            dict: Updated result dict.
-        """
         self._pad_img(results)
         self._pad_seg(results)
 
@@ -2865,40 +1844,7 @@ class BioMedical3DPad(BaseTransform):
 
 @TRANSFORMS.register_module()
 class BioMedical3DRandomFlip(BaseTransform):
-    """Flip biomedical 3D images and segmentations.
 
-    Modified from https://github.com/MIC-DKFZ/batchgenerators/blob/master/batchgenerators/transforms/spatial_transforms.py # noqa:E501
-
-    Copyright 2021 Division of
-    Medical Image Computing, German Cancer Research Center (DKFZ) and Applied
-    Computer Vision Lab, Helmholtz Imaging Platform.
-    Licensed under the Apache-2.0 License.
-
-    Required Keys:
-
-    - img (np.ndarry): Biomedical image with shape (N, Z, Y, X) by default,
-        N is the number of modalities.
-    - gt_seg_map (np.ndarray, optional): Biomedical seg map with shape
-        (Z, Y, X) by default.
-
-    Modified Keys:
-
-    - img (np.ndarry): Biomedical image with shape (N, Z, Y, X) by default,
-        N is the number of modalities.
-    - gt_seg_map (np.ndarray, optional): Biomedical seg map with shape
-        (Z, Y, X) by default.
-
-    Added Keys:
-
-    - do_flip
-    - flip_axes
-
-    Args:
-        prob (float): Flipping probability.
-        axes (Tuple[int, ...]): Flipping axes with order 'ZXY'.
-        swap_label_pairs (Optional[List[Tuple[int, int]]]):
-        The segmentation label pairs that are swapped when flipping.
-    """
 
     def __init__(self,
                  prob: float,
@@ -2922,13 +1868,8 @@ class BioMedical3DRandomFlip(BaseTransform):
         return img
 
     def _do_flip(self, img: np.ndarray) -> Tuple[bool, bool, bool]:
-        """Call function to determine which axis to flip.
 
-        Args:
-            img (np.ndarry): Image or segmentation map array.
-        Returns:
-            tuple: Flip action, whether to flip on the z, x, and y axes.
-        """
+
         flip_c, flip_x, flip_y = False, False, False
         if self.axes is not None:
             flip_c = 0 in self.axes and np.random.rand() < self.prob
@@ -2947,30 +1888,23 @@ class BioMedical3DRandomFlip(BaseTransform):
         return out
 
     def transform(self, results: Dict) -> Dict:
-        """Call function to flip and swap pair labels.
 
-        Args:
-            results (dict): Result dict.
-        Returns:
-            dict: Flipped results, 'do_flip', 'flip_axes' keys are added into
-                result dict.
-        """
-        # get actual flipped axis
+
         if 'do_flip' not in results:
             results['do_flip'] = self._do_flip(results['img'])
         if 'flip_axes' not in results:
             results['flip_axes'] = self.axes
-        # flip image
+
         results['img'] = self._flip(
             results['img'], direction=results['do_flip'])
-        # flip seg
+
         if results['gt_seg_map'] is not None:
             if results['gt_seg_map'].shape != results['img'].shape:
                 results['gt_seg_map'] = results['gt_seg_map'][None, :]
             results['gt_seg_map'] = self._flip(
                 results['gt_seg_map'], direction=results['do_flip'])
             results['gt_seg_map'] = results['gt_seg_map'].squeeze()
-            # swap label pairs
+
             if self.swap_label_pairs is not None:
                 results['gt_seg_map'] = self._swap_label(results['gt_seg_map'])
         return results
@@ -2984,40 +1918,7 @@ class BioMedical3DRandomFlip(BaseTransform):
 
 @TRANSFORMS.register_module()
 class Albu(BaseTransform):
-    """Albumentation augmentation. Adds custom transformations from
-    Albumentations library. Please, visit
-    `https://albumentations.readthedocs.io` to get more information. An example
-    of ``transforms`` is as followed:
 
-    .. code-block::
-        [
-            dict(
-                type='ShiftScaleRotate',
-                shift_limit=0.0625,
-                scale_limit=0.0,
-                rotate_limit=0,
-                interpolation=1,
-                p=0.5),
-            dict(
-                type='RandomBrightnessContrast',
-                brightness_limit=[0.1, 0.3],
-                contrast_limit=[0.1, 0.3],
-                p=0.2),
-            dict(type='ChannelShuffle', p=0.1),
-            dict(
-                type='OneOf',
-                transforms=[
-                    dict(type='Blur', blur_limit=3, p=1.0),
-                    dict(type='MedianBlur', blur_limit=3, p=1.0)
-                ],
-                p=0.1),
-        ]
-    Args:
-        transforms (list[dict]): A list of albu transformations
-        keymap (dict): Contains {'input key':'albumentation-style key'}
-        update_pad_shape (bool): Whether to update padding shape according to \
-            the output shape of the last transform
-    """
 
     def __init__(self,
                  transforms: List[dict],
@@ -3027,10 +1928,10 @@ class Albu(BaseTransform):
             raise ImportError(
                 'albumentations is not installed, '
                 'we suggest install albumentation by '
-                '"pip install albumentations>=0.3.2 --no-binary qudida,albumentations"'  # noqa
+                '"pip install albumentations>=0.3.2 --no-binary qudida,albumentations"'
             )
 
-        # Args will be modified later, copying it will be safer
+
         transforms = copy.deepcopy(transforms)
 
         self.transforms = transforms
@@ -3046,14 +1947,7 @@ class Albu(BaseTransform):
         self.keymap_back = {v: k for k, v in self.keymap_to_albu.items()}
 
     def albu_builder(self, cfg: dict) -> object:
-        """Build a callable object from a dict containing albu arguments.
 
-        Args:
-            cfg (dict): Config dict. It should at least contain the key "type".
-
-        Returns:
-            Callable: A callable object.
-        """
 
         assert isinstance(cfg, dict) and 'type' in cfg
         args = cfg.copy()
@@ -3064,7 +1958,7 @@ class Albu(BaseTransform):
                 raise ImportError(
                     'albumentations is not installed, '
                     'we suggest install albumentation by '
-                    '"pip install albumentations>=0.3.2 --no-binary qudida,albumentations"'  # noqa
+                    '"pip install albumentations>=0.3.2 --no-binary qudida,albumentations"'
                 )
             obj_cls = getattr(albumentations, obj_type)
         elif inspect.isclass(obj_type):
@@ -3082,15 +1976,7 @@ class Albu(BaseTransform):
 
     @staticmethod
     def mapper(d: dict, keymap: dict):
-        """Dictionary mapper.
 
-        Renames keys according to keymap provided.
-        Args:
-            d (dict): old dict
-            keymap (dict): {'old_key':'new_key'}
-        Returns:
-            dict: new dict.
-        """
 
         updated_dict = {}
         for k, _ in zip(d.keys(), d.values()):
@@ -3099,21 +1985,21 @@ class Albu(BaseTransform):
         return updated_dict
 
     def transform(self, results):
-        # dict to albumentations format
+
         results = self.mapper(results, self.keymap_to_albu)
 
-        # Convert to RGB since Albumentations works with RGB images
+
         results['image'] = cv2.cvtColor(results['image'], cv2.COLOR_BGR2RGB)
 
         results = self.aug(**results)
 
-        # Convert back to BGR
+
         results['image'] = cv2.cvtColor(results['image'], cv2.COLOR_RGB2BGR)
 
-        # back to the original format
+
         results = self.mapper(results, self.keymap_back)
 
-        # update final shape
+
         if self.update_pad_shape:
             results['pad_shape'] = results['img'].shape
 
@@ -3126,17 +2012,7 @@ class Albu(BaseTransform):
 
 @TRANSFORMS.register_module()
 class ConcatCDInput(BaseTransform):
-    """Concat images for change detection.
 
-    Required Keys:
-
-    - img
-    - img2
-
-    Args:
-        input_keys (tuple):  Input image keys for change detection.
-            Default: ('img', 'img2').
-    """
 
     def __init__(self, input_keys=('img', 'img2')):
         self.input_keys = input_keys
@@ -3156,14 +2032,7 @@ class ConcatCDInput(BaseTransform):
 
 @TRANSFORMS.register_module()
 class RandomDepthMix(BaseTransform):
-    """This class implements the RandomDepthMix transform.
 
-    Args:
-        prob (float): Probability of applying the transformation.
-            Defaults to 0.25.
-        mix_scale_ratio (float): Ratio to scale the mix width.
-            Defaults to 0.75.
-    """
 
     def __init__(
         self,

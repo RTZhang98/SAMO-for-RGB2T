@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 from mmcv.cnn import ConvModule
 from torch import nn
 from torch.utils import checkpoint as cp
@@ -7,27 +6,7 @@ from .se_layer import SELayer
 
 
 class InvertedResidual(nn.Module):
-    """InvertedResidual block for MobileNetV2.
 
-    Args:
-        in_channels (int): The input channels of the InvertedResidual block.
-        out_channels (int): The output channels of the InvertedResidual block.
-        stride (int): Stride of the middle (first) 3x3 convolution.
-        expand_ratio (int): Adjusts number of channels of the hidden layer
-            in InvertedResidual by this amount.
-        dilation (int): Dilation rate of depthwise conv. Default: 1
-        conv_cfg (dict): Config dict for convolution layer.
-            Default: None, which means using conv2d.
-        norm_cfg (dict): Config dict for normalization layer.
-            Default: dict(type='BN').
-        act_cfg (dict): Config dict for activation layer.
-            Default: dict(type='ReLU6').
-        with_cp (bool): Use checkpoint or not. Using checkpoint will save some
-            memory while slowing down the training speed. Default: False.
-
-    Returns:
-        Tensor: The output tensor.
-    """
 
     def __init__(self,
                  in_channels,
@@ -100,31 +79,7 @@ class InvertedResidual(nn.Module):
 
 
 class InvertedResidualV3(nn.Module):
-    """Inverted Residual Block for MobileNetV3.
 
-    Args:
-        in_channels (int): The input channels of this Module.
-        out_channels (int): The output channels of this Module.
-        mid_channels (int): The input channels of the depthwise convolution.
-        kernel_size (int): The kernel size of the depthwise convolution.
-            Default: 3.
-        stride (int): The stride of the depthwise convolution. Default: 1.
-        se_cfg (dict): Config dict for se layer. Default: None, which means no
-            se layer.
-        with_expand_conv (bool): Use expand conv or not. If set False,
-            mid_channels must be the same with in_channels. Default: True.
-        conv_cfg (dict): Config dict for convolution layer. Default: None,
-            which means using conv2d.
-        norm_cfg (dict): Config dict for normalization layer.
-            Default: dict(type='BN').
-        act_cfg (dict): Config dict for activation layer.
-            Default: dict(type='ReLU').
-        with_cp (bool): Use checkpoint or not. Using checkpoint will save some
-            memory while slowing down the training speed. Default: False.
-
-    Returns:
-        Tensor: The output tensor.
-    """
 
     def __init__(self,
                  in_channels,

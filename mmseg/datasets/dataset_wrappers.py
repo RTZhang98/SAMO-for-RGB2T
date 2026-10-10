@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import collections
 import copy
 from typing import List, Optional, Sequence, Union
@@ -10,18 +9,7 @@ from mmseg.registry import DATASETS, TRANSFORMS
 
 @DATASETS.register_module()
 class MultiImageMixDataset:
-    """A wrapper of multiple images mixed dataset.
 
-    Suitable for training on multiple images mixed data augmentation like
-    mosaic and mixup.
-
-    Args:
-        dataset (ConcatDataset or dict): The dataset to be mixed.
-        pipeline (Sequence[dict]): Sequence of transform object or
-            config dict to be composed.
-        skip_type_keys (list[str], optional): Sequence of type string to
-            be skip pipeline. Default to None.
-    """
 
     def __init__(self,
                  dataset: Union[ConcatDataset, dict],
@@ -65,15 +53,12 @@ class MultiImageMixDataset:
 
     @property
     def metainfo(self) -> dict:
-        """Get the meta information of the multi-image-mixed dataset.
 
-        Returns:
-            dict: The meta information of multi-image-mixed dataset.
-        """
+
         return copy.deepcopy(self._metainfo)
 
     def full_init(self):
-        """Loop to ``full_init`` each dataset."""
+
         if self._fully_initialized:
             return
 
@@ -83,14 +68,8 @@ class MultiImageMixDataset:
 
     @force_full_init
     def get_data_info(self, idx: int) -> dict:
-        """Get annotation by index.
 
-        Args:
-            idx (int): Global index of ``ConcatDataset``.
 
-        Returns:
-            dict: The idx-th annotation of the datasets.
-        """
         return self.dataset.get_data_info(idx)
 
     @force_full_init
@@ -122,14 +101,8 @@ class MultiImageMixDataset:
         return results
 
     def update_skip_type_keys(self, skip_type_keys):
-        """Update skip_type_keys.
 
-        It is called by an external hook.
 
-        Args:
-            skip_type_keys (list[str], optional): Sequence of type
-                string to be skip pipeline.
-        """
         assert all([
             isinstance(skip_type_key, str) for skip_type_key in skip_type_keys
         ])

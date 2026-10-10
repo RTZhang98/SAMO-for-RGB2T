@@ -1,16 +1,11 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 from mmseg.registry import DATASETS
 from .basesegdataset import BaseSegDataset
 
 
 @DATASETS.register_module()
 class LoveDADataset(BaseSegDataset):
-    """LoveDA dataset.
 
-    In segmentation map annotation for LoveDA, 0 is the ignore index.
-    ``reduce_zero_label`` should be set to True. The ``img_suffix`` and
-    ``seg_map_suffix`` are both fixed to '.png'.
-    """
+
     METAINFO = dict(
         classes=('background', 'building', 'road', 'water', 'barren', 'forest',
                  'agricultural'),

@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 from .basic_block import BasicBlock, Bottleneck
 from .embed import PatchEmbed
 from .encoding import Encoding
@@ -13,7 +12,7 @@ from .shape_convert import (nchw2nlc2nchw, nchw_to_nlc, nlc2nchw2nlc,
                             nlc_to_nchw)
 from .up_conv_block import UpConvBlock
 
-# isort: off
+
 from .wrappers import Upsample, resize
 from .san_layers import MLP, LayerNorm2d, cross_attn_layer
 

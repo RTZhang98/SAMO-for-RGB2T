@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.import math
 import math
 
 import torch
@@ -14,29 +13,16 @@ from .beit import BEiT, BEiTAttention, BEiTTransformerEncoderLayer
 
 
 class MAEAttention(BEiTAttention):
-    """Multi-head self-attention with relative position bias used in MAE.
 
-    This module is different from ``BEiTAttention`` by initializing the
-    relative bias table with zeros.
-    """
 
     def init_weights(self):
-        """Initialize relative position bias with zeros."""
 
-        # As MAE initializes relative position bias as zeros and this class
-        # inherited from BEiT which initializes relative position bias
-        # with `trunc_normal`, `init_weights` here does
-        # nothing and just passes directly
 
         pass
 
 
 class MAETransformerEncoderLayer(BEiTTransformerEncoderLayer):
-    """Implements one encoder layer in Vision Transformer.
 
-    This module is different from ``BEiTTransformerEncoderLayer`` by replacing
-    ``BEiTAttention`` with ``MAEAttention``.
-    """
 
     def build_attn(self, attn_cfg):
         self.attn = MAEAttention(**attn_cfg)
@@ -44,41 +30,7 @@ class MAETransformerEncoderLayer(BEiTTransformerEncoderLayer):
 
 @MODELS.register_module()
 class MAE(BEiT):
-    """VisionTransformer with support for patch.
 
-    Args:
-        img_size (int | tuple): Input image size. Default: 224.
-        patch_size (int): The patch size. Default: 16.
-        in_channels (int): Number of input channels. Default: 3.
-        embed_dims (int): embedding dimension. Default: 768.
-        num_layers (int): depth of transformer. Default: 12.
-        num_heads (int): number of attention heads. Default: 12.
-        mlp_ratio (int): ratio of mlp hidden dim to embedding dim.
-            Default: 4.
-        out_indices (list | tuple | int): Output from which stages.
-            Default: -1.
-        attn_drop_rate (float): The drop out rate for attention layer.
-            Default 0.0
-        drop_path_rate (float): stochastic depth rate. Default 0.0.
-        norm_cfg (dict): Config dict for normalization layer.
-            Default: dict(type='LN')
-        act_cfg (dict): The activation config for FFNs.
-            Default: dict(type='GELU').
-        patch_norm (bool): Whether to add a norm in PatchEmbed Block.
-            Default: False.
-        final_norm (bool): Whether to add a additional layer to normalize
-            final feature map. Default: False.
-        num_fcs (int): The number of fully-connected layers for FFNs.
-            Default: 2.
-        norm_eval (bool): Whether to set norm layers to eval mode, namely,
-            freeze running stats (mean and var). Note: Effect on Batch Norm
-            and its variants only. Default: False.
-        pretrained (str, optional): model pretrained path. Default: None.
-        init_values (float): Initialize the values of Attention and FFN
-            with learnable scaling. Defaults to 0.1.
-        init_cfg (dict or list[dict], optional): Initialization config dict.
-            Default: None.
-    """
 
     def __init__(self,
                  img_size=224,
@@ -150,12 +102,7 @@ class MAE(BEiT):
                     init_values=self.init_values))
 
     def fix_init_weight(self):
-        """Rescale the initialization according to layer id.
 
-        This function is copied from  https://github.com/microsoft/unilm/blob/master/beit/modeling_pretrain.py. # noqa: E501
-        Copyright (c) Microsoft Corporation
-        Licensed under the MIT License
-        """
 
         def rescale(param, layer_id):
             param.div_(math.sqrt(2.0 * layer_id))
@@ -188,10 +135,8 @@ class MAE(BEiT):
         elif self.init_cfg is not None:
             super().init_weights()
         else:
-            # We only implement the 'jax_impl' initialization implemented at
-            # https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/vision_transformer.py#L353  # noqa: E501
-            # Copyright 2019 Ross Wightman
-            # Licensed under the Apache License, Version 2.0 (the "License")
+
+
             trunc_normal_(self.cls_token, std=.02)
             for n, m in self.named_modules():
                 if isinstance(m, nn.Linear):
@@ -211,15 +156,15 @@ class MAE(BEiT):
             pos_embed_checkpoint = state_dict['pos_embed']
             embedding_size = pos_embed_checkpoint.shape[-1]
             num_extra_tokens = self.pos_embed.shape[-2] - self.num_patches
-            # height (== width) for the checkpoint position embedding
+
             orig_size = int(
                 (pos_embed_checkpoint.shape[-2] - num_extra_tokens)**0.5)
-            # height (== width) for the new position embedding
+
             new_size = int(self.num_patches**0.5)
-            # class_token and dist_token are kept unchanged
+
             if orig_size != new_size:
                 extra_tokens = pos_embed_checkpoint[:, :num_extra_tokens]
-                # only the position tokens are interpolated
+
                 pos_tokens = pos_embed_checkpoint[:, num_extra_tokens:]
                 pos_tokens = pos_tokens.reshape(-1, orig_size, orig_size,
                                                 embedding_size).permute(
@@ -239,7 +184,7 @@ class MAE(BEiT):
 
         x, hw_shape = self.patch_embed(inputs)
 
-        # stole cls_tokens impl from Phil Wang, thanks
+
         cls_tokens = self.cls_token.expand(B, -1, -1)
         x = torch.cat((cls_tokens, x), dim=1)
         x = x + self.pos_embed

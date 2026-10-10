@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import argparse
 import logging
 import os
@@ -15,37 +14,33 @@ from mmseg.registry import RUNNERS
 import rein
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Train a segmentor")
-    parser.add_argument("--config", required=True, help="train config file path")
-    parser.add_argument("--work-dir", help="directory used for logs and checkpoints")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config", required=True)
+    parser.add_argument("--work-dir")
     parser.add_argument(
         "--resume",
         action="store_true",
         default=False,
-        help="resume from the latest checkpoint in the work_dir automatically",
+
     )
     parser.add_argument(
         "--amp",
         action="store_true",
         default=False,
-        help="enable automatic-mixed-precision training",
+
     )
     parser.add_argument(
         "--cfg-options",
         nargs="+",
         action=DictAction,
-        help="override some settings in the used config, the key-value pair "
-        "in xxx=yyy format will be merged into config file. If the value to "
-        'be overwritten is a list, it should be like key="[a,b]" or key=a,b '
-        'It also allows nested list/tuple values, e.g. key="[(a,b),(c,d)]" '
-        "Note that the quotation marks are necessary and that no white space "
-        "is allowed.",
+
+
     )
     parser.add_argument(
         "--launcher",
         choices=["none", "pytorch", "slurm", "mpi"],
         default="none",
-        help="job launcher",
+
     )
 
     parser.add_argument("--local_rank", "--local-rank", type=int, default=0)

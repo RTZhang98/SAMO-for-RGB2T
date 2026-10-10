@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import torch
 import torch.nn as nn
 from mmcv.cnn import ConvModule, DepthwiseSeparableConvModule
@@ -10,23 +9,7 @@ from ..utils import InvertedResidual, resize
 
 
 class LearningToDownsample(nn.Module):
-    """Learning to downsample module.
 
-    Args:
-        in_channels (int): Number of input channels.
-        dw_channels (tuple[int]): Number of output channels of the first and
-            the second depthwise conv (dwconv) layers.
-        out_channels (int): Number of output channels of the whole
-            'learning to downsample' module.
-        conv_cfg (dict | None): Config of conv layers. Default: None
-        norm_cfg (dict | None): Config of norm layers. Default:
-            dict(type='BN')
-        act_cfg (dict): Config of activation layers. Default:
-            dict(type='ReLU')
-        dw_act_cfg (dict): In DepthwiseSeparableConvModule, activation config
-            of depthwise ConvModule. If it is 'default', it will be the same
-            as `act_cfg`. Default: None.
-    """
 
     def __init__(self,
                  in_channels,
@@ -80,37 +63,7 @@ class LearningToDownsample(nn.Module):
 
 
 class GlobalFeatureExtractor(nn.Module):
-    """Global feature extractor module.
 
-    Args:
-        in_channels (int): Number of input channels of the GFE module.
-            Default: 64
-        block_channels (tuple[int]): Tuple of ints. Each int specifies the
-            number of output channels of each Inverted Residual module.
-            Default: (64, 96, 128)
-        out_channels(int): Number of output channels of the GFE module.
-            Default: 128
-        expand_ratio (int): Adjusts number of channels of the hidden layer
-            in InvertedResidual by this amount.
-            Default: 6
-        num_blocks (tuple[int]): Tuple of ints. Each int specifies the
-            number of times each Inverted Residual module is repeated.
-            The repeated Inverted Residual modules are called a 'group'.
-            Default: (3, 3, 3)
-        strides (tuple[int]): Tuple of ints. Each int specifies
-            the downsampling factor of each 'group'.
-            Default: (2, 2, 1)
-        pool_scales (tuple[int]): Tuple of ints. Each int specifies
-            the parameter required in 'global average pooling' within PPM.
-            Default: (1, 2, 3, 6)
-        conv_cfg (dict | None): Config of conv layers. Default: None
-        norm_cfg (dict | None): Config of norm layers. Default:
-            dict(type='BN')
-        act_cfg (dict): Config of activation layers. Default:
-            dict(type='ReLU')
-        align_corners (bool): align_corners argument of F.interpolate.
-            Default: False
-    """
 
     def __init__(self,
                  in_channels=64,
@@ -192,24 +145,7 @@ class GlobalFeatureExtractor(nn.Module):
 
 
 class FeatureFusionModule(nn.Module):
-    """Feature fusion module.
 
-    Args:
-        higher_in_channels (int): Number of input channels of the
-            higher-resolution branch.
-        lower_in_channels (int): Number of input channels of the
-            lower-resolution branch.
-        out_channels (int): Number of output channels.
-        conv_cfg (dict | None): Config of conv layers. Default: None
-        norm_cfg (dict | None): Config of norm layers. Default:
-            dict(type='BN')
-        dwconv_act_cfg (dict): Config of activation layers in 3x3 conv.
-            Default: dict(type='ReLU').
-        conv_act_cfg (dict): Config of activation layers in the two 1x1 conv.
-            Default: None.
-        align_corners (bool): align_corners argument of F.interpolate.
-            Default: False.
-    """
 
     def __init__(self,
                  higher_in_channels,
@@ -269,58 +205,7 @@ class FeatureFusionModule(nn.Module):
 
 @MODELS.register_module()
 class FastSCNN(BaseModule):
-    """Fast-SCNN Backbone.
 
-    This backbone is the implementation of `Fast-SCNN: Fast Semantic
-    Segmentation Network <https://arxiv.org/abs/1902.04502>`_.
-
-    Args:
-        in_channels (int): Number of input image channels. Default: 3.
-        downsample_dw_channels (tuple[int]): Number of output channels after
-            the first conv layer & the second conv layer in
-            Learning-To-Downsample (LTD) module.
-            Default: (32, 48).
-        global_in_channels (int): Number of input channels of
-            Global Feature Extractor(GFE).
-            Equal to number of output channels of LTD.
-            Default: 64.
-        global_block_channels (tuple[int]): Tuple of integers that describe
-            the output channels for each of the MobileNet-v2 bottleneck
-            residual blocks in GFE.
-            Default: (64, 96, 128).
-        global_block_strides (tuple[int]): Tuple of integers
-            that describe the strides (downsampling factors) for each of the
-            MobileNet-v2 bottleneck residual blocks in GFE.
-            Default: (2, 2, 1).
-        global_out_channels (int): Number of output channels of GFE.
-            Default: 128.
-        higher_in_channels (int): Number of input channels of the higher
-            resolution branch in FFM.
-            Equal to global_in_channels.
-            Default: 64.
-        lower_in_channels (int): Number of input channels of  the lower
-            resolution branch in FFM.
-            Equal to global_out_channels.
-            Default: 128.
-        fusion_out_channels (int): Number of output channels of FFM.
-            Default: 128.
-        out_indices (tuple): Tuple of indices of list
-            [higher_res_features, lower_res_features, fusion_output].
-            Often set to (0,1,2) to enable aux. heads.
-            Default: (0, 1, 2).
-        conv_cfg (dict | None): Config of conv layers. Default: None
-        norm_cfg (dict | None): Config of norm layers. Default:
-            dict(type='BN')
-        act_cfg (dict): Config of activation layers. Default:
-            dict(type='ReLU')
-        align_corners (bool): align_corners argument of F.interpolate.
-            Default: False
-        dw_act_cfg (dict): In DepthwiseSeparableConvModule, activation config
-            of depthwise ConvModule. If it is 'default', it will be the same
-            as `act_cfg`. Default: None.
-        init_cfg (dict or list[dict], optional): Initialization config dict.
-            Default: None
-    """
 
     def __init__(self,
                  in_channels=3,

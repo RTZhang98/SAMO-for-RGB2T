@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 from typing import List
 
 import numpy as np
@@ -16,36 +15,7 @@ from mmseg.utils import get_classes, get_predefined_templates, tokenizer
 
 @MODELS.register_module()
 class CLIPTextEncoder(BaseModule):
-    """A text encoder with transformer architecture to encode the label text.
 
-    Modified from https://github.com/MendelXu/SAN/blob/main/san/model/clip_utils/classifier.py # noqa:E501
-    Copyright (c) 2023 MendelXu.
-    Licensed under the MIT License
-
-    Args:
-        dataset_name: (str|None): The name of the dataset to which
-            the data belongs.
-        vocabulary: (List[str]|None): The list of class names. Default: None.
-        templates: (List[str]|None): The prompt template used for labels.
-            Default: None.
-        total_vocab_size: (int): Number of all words used by the pre-trained
-            model. Default: 49408 (CLIP).
-        context_length: (int): The max length of prompt text.
-            Default: 77 (CLIP).
-        embed_dims: (int): Width of transformer model. Default: 512.
-        num_layers: (int): Depth of transformer. Default: 12,
-        num_heads: (int): Number of attention heads in transformer.
-            Default: 8,
-        mlp_ratio: (int) Ratio of mlp hidden dim to embedding dim in
-            transformer. Default: 4,
-        output_dims: (int) Dim of output text embeddings. Default: 512,
-        cache_feature: (bool) Whether to save class embeddings in cache.
-            Default: True,
-        cat_bg: (bool) Whether to add background embedding. Default: True.
-        norm_cfg (dict|None): Config for norm layer. Default: dict(type='LN')
-        init_cfg (dict or list[dict], optional): Initialization config dict.
-            Default: None.
-    """
 
     def __init__(self,
                  dataset_name: str = None,
@@ -118,14 +88,11 @@ class CLIPTextEncoder(BaseModule):
         return getattr(self, self.final_name)
 
     def build_attention_mask(self):
-        """lazily create causal attention mask, with full attention between the
-        tokens.
 
-        pytorch uses additive attention mask; fill with -inf
-        """
+
         mask = torch.empty(self.num_pos, self.num_pos)
         mask.fill_(float('-inf'))
-        mask.triu_(1)  # zero out the lower diagonal
+        mask.triu_(1)
         return mask
 
     def _freeze(self):
@@ -158,25 +125,25 @@ class CLIPTextEncoder(BaseModule):
 
     @torch.no_grad()
     def encode_text(self, text, normalize=False):
-        """encode class token."""
+
 
         embed_device = self.token_embedding.weight.device
         x = self.token_embedding(
-            text.to(embed_device))  # [batch_size, n_ctx, d_model]
+            text.to(embed_device))
         x = x + self.positional_embedding
-        x = x.permute(1, 0, 2)  # NLD -> LND
+        x = x.permute(1, 0, 2)
         for block in self.transformer:
             x = block(query=x, attn_masks=self.attn_mask)
-        x = x.permute(1, 0, 2)  # LND -> NLD
-        x = self.ln_final(x)  # [batch_size, n_ctx, transformer.width]
-        # take features from the eot embedding
-        # (eot_token is the highest number in each sequence)
+        x = x.permute(1, 0, 2)
+        x = self.ln_final(x)
+
+
         x = x[torch.arange(x.shape[0]),
               text.argmax(dim=-1)] @ self.text_projection
         return F.normalize(x, dim=-1) if normalize else x
 
     def template_encode(self, vocabulary):
-        """Prompt engineering."""
+
         text_embed_bucket = []
         for template in self.templates:
             text_inputs = tokenizer.tokenize(
@@ -188,8 +155,8 @@ class CLIPTextEncoder(BaseModule):
         return text_embed
 
     def forward(self):
-        """Forward function."""
-        if self.dataset_name is None:  # encoding vocabulary directly
+
+        if self.dataset_name is None:
             class_names = self.vocabulary
             if self.cache_feature:
                 new_classes = [
@@ -203,7 +170,7 @@ class CLIPTextEncoder(BaseModule):
             else:
                 class_embeds = self.template_encode(class_names)
 
-        else:  # encoding the classes of the dataset
+        else:
             class_names = get_classes(self.dataset_name)
             if class_names[0] == 'background':
                 class_names = class_names[1:]
@@ -224,6 +191,6 @@ class CLIPTextEncoder(BaseModule):
 
 @MODELS.register_module()
 class QuickGELU(nn.Module):
-    # From https://github.com/openai/CLIP/blob/main/clip/model.py
+
     def forward(self, x: torch.Tensor):
         return x * torch.sigmoid(1.702 * x)

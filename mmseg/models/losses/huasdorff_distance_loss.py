@@ -1,6 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
-"""Modified from https://github.com/JunMa11/SegWithDistMap/blob/
-master/code/train_LA_HD.py (Apache-2.0 License)"""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -12,22 +9,12 @@ from .utils import get_class_weight, weighted_loss
 
 
 def compute_dtm(img_gt: Tensor, pred: Tensor) -> Tensor:
-    """
-    compute the distance transform map of foreground in mask
-    Args:
-        img_gt: Ground truth of the image, (b, h, w)
-        pred: Predictions of the segmentation head after softmax, (b, c, h, w)
 
-    Returns:
-        output: the foreground Distance Map (SDM)
-        dtm(x) = 0; x in segmentation boundary
-                inf|x-y|; x in segmentation
-    """
 
     fg_dtm = torch.zeros_like(pred)
     out_shape = pred.shape
-    for b in range(out_shape[0]):  # batch size
-        for c in range(1, out_shape[1]):  # default 0 channel is background
+    for b in range(out_shape[0]):
+        for c in range(1, out_shape[1]):
             posmask = img_gt[b].byte()
             if posmask.any():
                 posdis = distance(posmask)
@@ -43,17 +30,8 @@ def hd_loss(seg_soft: Tensor,
             gt_dtm: Tensor,
             class_weight=None,
             ignore_index=255) -> Tensor:
-    """
-    compute huasdorff distance loss for segmentation
-    Args:
-        seg_soft: softmax results, shape=(b,c,x,y)
-        gt: ground truth, shape=(b,x,y)
-        seg_dtm: segmentation distance transform map, shape=(b,c,x,y)
-        gt_dtm: ground truth distance transform map, shape=(b,c,x,y)
 
-    Returns:
-        output: hd_loss
-    """
+
     assert seg_soft.shape[0] == gt.shape[0]
     total_loss = 0
     num_class = seg_soft.shape[1]
@@ -76,21 +54,7 @@ def hd_loss(seg_soft: Tensor,
 
 @MODELS.register_module()
 class HuasdorffDisstanceLoss(nn.Module):
-    """HuasdorffDisstanceLoss. This loss is proposed in `How Distance Transform
-    Maps Boost Segmentation CNNs: An Empirical Study.
 
-    <http://proceedings.mlr.press/v121/ma20b.html>`_.
-    Args:
-        reduction (str, optional): The method used to reduce the loss into
-            a scalar. Defaults to 'mean'.
-        class_weight (list[float] | str, optional): Weight of each class. If in
-            str format, read them from a file. Defaults to None.
-        loss_weight (float): Weight of the loss. Defaults to 1.0.
-        ignore_index (int | None): The label index to be ignored. Default: 255.
-        loss_name (str): Name of the loss item. If you want this loss
-            item to be included into the backward graph, `loss_` must be the
-            prefix of the name. Defaults to 'loss_boundary'.
-    """
 
     def __init__(self,
                  reduction='mean',
@@ -112,19 +76,8 @@ class HuasdorffDisstanceLoss(nn.Module):
                 avg_factor=None,
                 reduction_override=None,
                 **kwargs) -> Tensor:
-        """Forward function.
 
-        Args:
-            pred (Tensor): Predictions of the segmentation head. (B, C, H, W)
-            target (Tensor): Ground truth of the image. (B, H, W)
-            avg_factor (int, optional): Average factor that is used to
-                average the loss. Defaults to None.
-            reduction_override (str, optional): The reduction method used
-                to override the original reduction method of the loss.
-                Options are "none", "mean" and "sum".
-        Returns:
-            Tensor: Loss tensor.
-        """
+
         assert reduction_override in (None, 'none', 'mean', 'sum')
         reduction = (
             reduction_override if reduction_override else self.reduction)

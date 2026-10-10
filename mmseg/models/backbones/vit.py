@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import math
 import warnings
 
@@ -20,30 +19,7 @@ from ..utils import PatchEmbed, resize
 
 
 class TransformerEncoderLayer(BaseModule):
-    """Implements one encoder layer in Vision Transformer.
 
-    Args:
-        embed_dims (int): The feature dimension.
-        num_heads (int): Parallel attention heads.
-        feedforward_channels (int): The hidden dimension for FFNs.
-        drop_rate (float): Probability of an element to be zeroed
-            after the feed forward layer. Default: 0.0.
-        attn_drop_rate (float): The drop out rate for attention layer.
-            Default: 0.0.
-        drop_path_rate (float): stochastic depth rate. Default 0.0.
-        num_fcs (int): The number of fully-connected layers for FFNs.
-            Default: 2.
-        qkv_bias (bool): enable bias for qkv if True. Default: True
-        act_cfg (dict): The activation config for FFNs.
-            Default: dict(type='GELU').
-        norm_cfg (dict): Config dict for normalization layer.
-            Default: dict(type='LN').
-        batch_first (bool): Key, Query and Value are shape of
-            (batch, n, embed_dim)
-            or (n, batch, embed_dim). Default: True.
-        with_cp (bool): Use checkpoint or not. Using checkpoint will save
-            some memory while slowing down the training speed. Default: False.
-    """
 
     def __init__(self,
                  embed_dims,
@@ -123,64 +99,7 @@ class TransformerEncoderLayer(BaseModule):
 
 @MODELS.register_module()
 class VisionTransformer(BaseModule):
-    """Vision Transformer.
 
-    This backbone is the implementation of `An Image is Worth 16x16 Words:
-    Transformers for Image Recognition at
-    Scale <https://arxiv.org/abs/2010.11929>`_.
-
-    Args:
-        img_size (int | tuple): Input image size. Default: 224.
-        patch_size (int): The patch size. Default: 16.
-        patch_pad  (str | int | None): The padding method in patch embedding.
-            Default: 'corner'.
-        in_channels (int): Number of input channels. Default: 3.
-        embed_dims (int): embedding dimension. Default: 768.
-        num_layers (int): depth of transformer. Default: 12.
-        num_heads (int): number of attention heads. Default: 12.
-        mlp_ratio (int): ratio of mlp hidden dim to embedding dim.
-            Default: 4.
-        out_origin (bool): Whether to output the original input embedding.
-            Default: False
-        out_indices (list | tuple | int): Output from which stages.
-            Default: -1.
-        qkv_bias (bool): enable bias for qkv if True. Default: True.
-        drop_rate (float): Probability of an element to be zeroed.
-            Default 0.0
-        attn_drop_rate (float): The drop out rate for attention layer.
-            Default 0.0
-        drop_path_rate (float): stochastic depth rate. Default 0.0
-        with_cls_token (bool): Whether concatenating class token into image
-            tokens as transformer input. Default: True.
-        output_cls_token (bool): Whether output the cls_token. If set True,
-            `with_cls_token` must be True. Default: False.
-        norm_cfg (dict): Config dict for normalization layer.
-            Default: dict(type='LN')
-        act_cfg (dict): The activation config for FFNs.
-            Default: dict(type='GELU').
-        patch_bias (dict): Whether use bias in convolution of PatchEmbed Block.
-            Default: True.
-        patch_norm (bool): Whether to add a norm in PatchEmbed Block.
-            Default: False.
-        pre_norm (bool): Whether to add a norm before Transformer Layers.
-            Default: False.
-        final_norm (bool): Whether to add a additional layer to normalize
-            final feature map. Default: False.
-        interpolate_mode (str): Select the interpolate mode for position
-            embeding vector resize. Default: bicubic.
-        num_fcs (int): The number of fully-connected layers for FFNs.
-            Default: 2.
-        norm_eval (bool): Whether to set norm layers to eval mode, namely,
-            freeze running stats (mean and var). Note: Effect on Batch Norm
-            and its variants only. Default: False.
-        with_cp (bool): Use checkpoint or not. Using checkpoint will save
-            some memory while slowing down the training speed. Default: False.
-        frozen_exclude (List): List of parameters that are not to be frozen.
-            Default: ["all"], "all" means there are no frozen parameters.
-        pretrained (str, optional): model pretrained path. Default: None.
-        init_cfg (dict or list[dict], optional): Initialization config dict.
-            Default: None.
-    """
 
     def __init__(self,
                  img_size=224,
@@ -284,7 +203,7 @@ class VisionTransformer(BaseModule):
 
         dpr = [
             x.item() for x in torch.linspace(0, drop_path_rate, num_layers)
-        ]  # stochastic depth decay rule
+        ]
 
         self.layers = ModuleList()
         for i in range(num_layers):
@@ -357,8 +276,8 @@ class VisionTransformer(BaseModule):
         elif self.init_cfg is not None:
             super().init_weights()
         else:
-            # We only implement the 'jax_impl' initialization implemented at
-            # https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/vision_transformer.py#L353  # noqa: E501
+
+
             trunc_normal_(self.pos_embed, std=.02)
             trunc_normal_(self.cls_token, std=.02)
             for n, m in self.named_modules():
@@ -382,19 +301,8 @@ class VisionTransformer(BaseModule):
                 param.requires_grad = False
 
     def _pos_embeding(self, patched_img, hw_shape, pos_embed):
-        """Positioning embeding method.
 
-        Resize the pos_embed, if the input image size doesn't match
-            the training size.
-        Args:
-            patched_img (torch.Tensor): The patched image, it should be
-                shape of [B, L1, C].
-            hw_shape (tuple): The downsampled image resolution.
-            pos_embed (torch.Tensor): The pos_embed weighs, it should be
-                shape of [B, L2, c].
-        Return:
-            torch.Tensor: The pos encoded image feature.
-        """
+
         assert patched_img.ndim == 3 and pos_embed.ndim == 3, \
             'the shapes of patched_img and pos_embed must be [B, L, C]'
         x_len, pos_len = patched_img.shape[1], pos_embed.shape[1]
@@ -414,21 +322,8 @@ class VisionTransformer(BaseModule):
 
     @staticmethod
     def resize_pos_embed(pos_embed, input_shpae, pos_shape, mode):
-        """Resize pos_embed weights.
 
-        Resize pos_embed using bicubic interpolate method.
-        Args:
-            pos_embed (torch.Tensor): Position embedding weights.
-            input_shpae (tuple): Tuple for (downsampled input image height,
-                downsampled input image width).
-            pos_shape (tuple): The resolution of downsampled origin training
-                image.
-            mode (str): Algorithm used for upsampling:
-                ``'nearest'`` | ``'linear'`` | ``'bilinear'`` | ``'bicubic'`` |
-                ``'trilinear'``. Default: ``'nearest'``
-        Return:
-            torch.Tensor: The resized pos_embed of shape [B, L_new, C]
-        """
+
         assert pos_embed.ndim == 3, 'shape of pos_embed must be [B, L, C]'
         pos_h, pos_w = pos_shape
         cls_token_weight = pos_embed[:, 0]
@@ -447,13 +342,13 @@ class VisionTransformer(BaseModule):
 
         x, hw_shape = self.patch_embed(inputs)
 
-        # stole cls_tokens impl from Phil Wang, thanks
+
         cls_tokens = self.cls_token.expand(B, -1, -1)
         x = torch.cat((cls_tokens, x), dim=1)
         x = self._pos_embeding(x, hw_shape, self.pos_embed)
 
         if not self.with_cls_token:
-            # Remove class token for transformer encoder input
+
             x = x[:, 1:]
 
         if self.pre_norm:
@@ -462,7 +357,7 @@ class VisionTransformer(BaseModule):
         outs = []
         if self.out_origin:
             if self.with_cls_token:
-                # Remove class token and reshape token for decoder head
+
                 out = x[:, 1:]
             else:
                 out = x
@@ -480,7 +375,7 @@ class VisionTransformer(BaseModule):
                     x = self.norm1(x)
             if i in self.out_indices:
                 if self.with_cls_token:
-                    # Remove class token and reshape token for decoder head
+
                     out = x[:, 1:]
                 else:
                     out = x

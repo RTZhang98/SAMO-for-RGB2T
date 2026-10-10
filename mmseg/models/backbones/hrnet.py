@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import warnings
 
 import torch.nn as nn
@@ -12,11 +11,7 @@ from .resnet import BasicBlock, Bottleneck
 
 
 class HRModule(BaseModule):
-    """High-Resolution Module for HRNet.
 
-    In this module, every branch has 4 BasicBlocks/Bottlenecks. Fusion/Exchange
-    is in this module.
-    """
 
     def __init__(self,
                  num_branches,
@@ -49,7 +44,7 @@ class HRModule(BaseModule):
 
     def _check_branches(self, num_branches, num_blocks, in_channels,
                         num_channels):
-        """Check branches configuration."""
+
         if num_branches != len(num_blocks):
             error_msg = f'NUM_BRANCHES({num_branches}) <> NUM_BLOCKS(' \
                         f'{len(num_blocks)})'
@@ -71,7 +66,7 @@ class HRModule(BaseModule):
                          num_blocks,
                          num_channels,
                          stride=1):
-        """Build one branch."""
+
         downsample = None
         if stride != 1 or \
                 self.in_channels[branch_index] != \
@@ -113,7 +108,7 @@ class HRModule(BaseModule):
         return Sequential(*layers)
 
     def _make_branches(self, num_branches, block, num_blocks, num_channels):
-        """Build multiple branch."""
+
         branches = []
 
         for i in range(num_branches):
@@ -123,7 +118,7 @@ class HRModule(BaseModule):
         return ModuleList(branches)
 
     def _make_fuse_layers(self):
-        """Build fuse layer."""
+
         if self.num_branches == 1:
             return None
 
@@ -146,7 +141,7 @@ class HRModule(BaseModule):
                                 padding=0,
                                 bias=False),
                             build_norm_layer(self.norm_cfg, in_channels[i])[1],
-                            # we set align_corners=False for HRNet
+
                             Upsample(
                                 scale_factor=2**(j - i),
                                 mode='bilinear',
@@ -189,7 +184,7 @@ class HRModule(BaseModule):
         return nn.ModuleList(fuse_layers)
 
     def forward(self, x):
-        """Forward function."""
+
         if self.num_branches == 1:
             return [self.branches[0](x[0])]
 
@@ -216,83 +211,7 @@ class HRModule(BaseModule):
 
 @MODELS.register_module()
 class HRNet(BaseModule):
-    """HRNet backbone.
 
-    This backbone is the implementation of `High-Resolution Representations
-    for Labeling Pixels and Regions <https://arxiv.org/abs/1904.04514>`_.
-
-    Args:
-        extra (dict): Detailed configuration for each stage of HRNet.
-            There must be 4 stages, the configuration for each stage must have
-            5 keys:
-
-                - num_modules (int): The number of HRModule in this stage.
-                - num_branches (int): The number of branches in the HRModule.
-                - block (str): The type of convolution block.
-                - num_blocks (tuple): The number of blocks in each branch.
-                    The length must be equal to num_branches.
-                - num_channels (tuple): The number of channels in each branch.
-                    The length must be equal to num_branches.
-        in_channels (int): Number of input image channels. Normally 3.
-        conv_cfg (dict): Dictionary to construct and config conv layer.
-            Default: None.
-        norm_cfg (dict): Dictionary to construct and config norm layer.
-            Use `BN` by default.
-        norm_eval (bool): Whether to set norm layers to eval mode, namely,
-            freeze running stats (mean and var). Note: Effect on Batch Norm
-            and its variants only. Default: False.
-        with_cp (bool): Use checkpoint or not. Using checkpoint will save some
-            memory while slowing down the training speed. Default: False.
-        frozen_stages (int): Stages to be frozen (stop grad and set eval mode).
-            -1 means not freezing any parameters. Default: -1.
-        zero_init_residual (bool): Whether to use zero init for last norm layer
-            in resblocks to let them behave as identity. Default: False.
-        multiscale_output (bool): Whether to output multi-level features
-            produced by multiple branches. If False, only the first level
-            feature will be output. Default: True.
-        pretrained (str, optional): Model pretrained path. Default: None.
-        init_cfg (dict or list[dict], optional): Initialization config dict.
-            Default: None.
-
-    Example:
-        >>> from mmseg.models import HRNet
-        >>> import torch
-        >>> extra = dict(
-        >>>     stage1=dict(
-        >>>         num_modules=1,
-        >>>         num_branches=1,
-        >>>         block='BOTTLENECK',
-        >>>         num_blocks=(4, ),
-        >>>         num_channels=(64, )),
-        >>>     stage2=dict(
-        >>>         num_modules=1,
-        >>>         num_branches=2,
-        >>>         block='BASIC',
-        >>>         num_blocks=(4, 4),
-        >>>         num_channels=(32, 64)),
-        >>>     stage3=dict(
-        >>>         num_modules=4,
-        >>>         num_branches=3,
-        >>>         block='BASIC',
-        >>>         num_blocks=(4, 4, 4),
-        >>>         num_channels=(32, 64, 128)),
-        >>>     stage4=dict(
-        >>>         num_modules=3,
-        >>>         num_branches=4,
-        >>>         block='BASIC',
-        >>>         num_blocks=(4, 4, 4, 4),
-        >>>         num_channels=(32, 64, 128, 256)))
-        >>> self = HRNet(extra, in_channels=1)
-        >>> self.eval()
-        >>> inputs = torch.rand(1, 1, 32, 32)
-        >>> level_outputs = self.forward(inputs)
-        >>> for level_out in level_outputs:
-        ...     print(tuple(level_out.shape))
-        (1, 32, 8, 8)
-        (1, 64, 4, 4)
-        (1, 128, 2, 2)
-        (1, 256, 1, 1)
-    """
 
     blocks_dict = {'BASIC': BasicBlock, 'BOTTLENECK': Bottleneck}
 
@@ -330,11 +249,11 @@ class HRNet(BaseModule):
         else:
             raise TypeError('pretrained must be a str or None')
 
-        # Assert configurations of 4 stages are in extra
+
         assert 'stage1' in extra and 'stage2' in extra \
                and 'stage3' in extra and 'stage4' in extra
-        # Assert whether the length of `num_blocks` and `num_channels` are
-        # equal to `num_branches`
+
+
         for i in range(4):
             cfg = extra[f'stage{i + 1}']
             assert len(cfg['num_blocks']) == cfg['num_branches'] and \
@@ -347,7 +266,7 @@ class HRNet(BaseModule):
         self.with_cp = with_cp
         self.frozen_stages = frozen_stages
 
-        # stem net
+
         self.norm1_name, norm1 = build_norm_layer(self.norm_cfg, 64, postfix=1)
         self.norm2_name, norm2 = build_norm_layer(self.norm_cfg, 64, postfix=2)
 
@@ -373,7 +292,7 @@ class HRNet(BaseModule):
         self.add_module(self.norm2_name, norm2)
         self.relu = nn.ReLU(inplace=True)
 
-        # stage 1
+
         self.stage1_cfg = self.extra['stage1']
         num_channels = self.stage1_cfg['num_channels'][0]
         block_type = self.stage1_cfg['block']
@@ -383,7 +302,7 @@ class HRNet(BaseModule):
         stage1_out_channels = num_channels * block.expansion
         self.layer1 = self._make_layer(block, 64, num_channels, num_blocks)
 
-        # stage 2
+
         self.stage2_cfg = self.extra['stage2']
         num_channels = self.stage2_cfg['num_channels']
         block_type = self.stage2_cfg['block']
@@ -395,7 +314,7 @@ class HRNet(BaseModule):
         self.stage2, pre_stage_channels = self._make_stage(
             self.stage2_cfg, num_channels)
 
-        # stage 3
+
         self.stage3_cfg = self.extra['stage3']
         num_channels = self.stage3_cfg['num_channels']
         block_type = self.stage3_cfg['block']
@@ -407,7 +326,7 @@ class HRNet(BaseModule):
         self.stage3, pre_stage_channels = self._make_stage(
             self.stage3_cfg, num_channels)
 
-        # stage 4
+
         self.stage4_cfg = self.extra['stage4']
         num_channels = self.stage4_cfg['num_channels']
         block_type = self.stage4_cfg['block']
@@ -423,17 +342,17 @@ class HRNet(BaseModule):
 
     @property
     def norm1(self):
-        """nn.Module: the normalization layer named "norm1" """
+
         return getattr(self, self.norm1_name)
 
     @property
     def norm2(self):
-        """nn.Module: the normalization layer named "norm2" """
+
         return getattr(self, self.norm2_name)
 
     def _make_transition_layer(self, num_channels_pre_layer,
                                num_channels_cur_layer):
-        """Make transition layer."""
+
         num_branches_cur = len(num_channels_cur_layer)
         num_branches_pre = len(num_channels_pre_layer)
 
@@ -479,7 +398,7 @@ class HRNet(BaseModule):
         return nn.ModuleList(transition_layers)
 
     def _make_layer(self, block, inplanes, planes, blocks, stride=1):
-        """Make each layer."""
+
         downsample = None
         if stride != 1 or inplanes != planes * block.expansion:
             downsample = nn.Sequential(
@@ -527,7 +446,7 @@ class HRNet(BaseModule):
         return Sequential(*layers)
 
     def _make_stage(self, layer_config, in_channels, multiscale_output=True):
-        """Make each stage."""
+
         num_modules = layer_config['num_modules']
         num_branches = layer_config['num_branches']
         num_blocks = layer_config['num_blocks']
@@ -546,7 +465,7 @@ class HRNet(BaseModule):
                     type='Constant', val=0, override=dict(name='norm3'))
 
         for i in range(num_modules):
-            # multi_scale_output is only used for the last module
+
             if not multiscale_output and i == num_modules - 1:
                 reset_multiscale_output = False
             else:
@@ -568,7 +487,7 @@ class HRNet(BaseModule):
         return Sequential(*hr_modules), in_channels
 
     def _freeze_stages(self):
-        """Freeze stages param and norm stats."""
+
         if self.frozen_stages >= 0:
 
             self.norm1.eval()
@@ -594,7 +513,7 @@ class HRNet(BaseModule):
                 param.requires_grad = False
 
     def forward(self, x):
-        """Forward function."""
+
 
         x = self.conv1(x)
         x = self.norm1(x)
@@ -631,12 +550,12 @@ class HRNet(BaseModule):
         return y_list
 
     def train(self, mode=True):
-        """Convert the model into training mode will keeping the normalization
-        layer freezed."""
+
+
         super().train(mode)
         self._freeze_stages()
         if mode and self.norm_eval:
             for m in self.modules():
-                # trick: eval have effect on BatchNorm only
+
                 if isinstance(m, _BatchNorm):
                     m.eval()

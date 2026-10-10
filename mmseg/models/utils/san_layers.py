@@ -1,8 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
-# Modified from https://github.com/MendelXu/SAN/blob/main/san/model/attn_helper.py  # noqa: E501
-# Copyright (c) 2023 MendelXu.
-# Licensed under the MIT License
-
 import warnings
 from typing import Optional
 
@@ -37,42 +32,11 @@ def cross_attn_with_self_bias(
     static_k: Optional[Tensor] = None,
     static_v: Optional[Tensor] = None,
 ):
-    """Forward function of multi-head attention. Modified from
-    multi_head_attention_forward in
-    https://github.com/pytorch/pytorch/blob/main/torch/nn/functional.py.
 
-    Args:
-        query, key, value: map a query and a set of key-value pairs to an output.
-            See "Attention Is All You Need" for more details.
-        embed_dim_to_check: total dimension of the model.
-        num_heads: parallel attention heads.
-        in_proj_weight, in_proj_bias: input projection weight and bias.
-        bias_k, bias_v: bias of the key and value sequences to be added at dim=0.
-        add_zero_attn: add a new batch of zeros to the key and
-                       value sequences at dim=1.
-        dropout_p: probability of an element to be zeroed.
-        out_proj_weight, out_proj_bias: the output projection weight and bias.
-        training: apply dropout if is ``True``.
-        key_padding_mask: if provided, specified padding elements in the key will
-            be ignored by the attention. This is an binary mask. When the value is True,
-            the corresponding value on the attention layer will be filled with -inf.
-        need_weights: output attn_output_weights.
-            Default: `True`
-            Note: `needs_weight` defaults to `True`, but should be set to `False`
-            For best performance when attention weights are not needed.
-            *Setting needs_weights to `True`
-            leads to a significant performance degradation.*
-        attn_mask: 2D mask that prevents attention to certain positions. A 2D mask will be broadcasted for all
-            the batches while a 3D mask allows to specify a different mask for the entries of each batch.
-        use_separate_proj_weight: the function accept the proj. weights for query, key,
-            and value in different forms. If false, in_proj_weight will be used, which is
-            a combination of q_proj_weight, k_proj_weight, v_proj_weight.
-        q_proj_weight, k_proj_weight, v_proj_weight, in_proj_bias: input projection weight and bias.
-        static_k, static_v: static key and value used for attention operators.
-    """  # noqa: E501
+
     tgt_len, bsz, embed_dim = query.size()
     assert embed_dim == embed_dim_to_check
-    # allow MHA to have different sizes for the feature dimension
+
     assert key.size(0) == value.size(0) and key.size(1) == value.size(1)
 
     head_dim = embed_dim // num_heads
@@ -83,13 +47,12 @@ def cross_attn_with_self_bias(
     if not use_separate_proj_weight:
         if (query is key or torch.equal(
                 query, key)) and (key is value or torch.equal(key, value)):
-            # self-attention
+
             raise NotImplementedError('self-attention is not implemented')
 
         elif key is value or torch.equal(key, value):
-            # encoder-decoder attention
-            # This is inline in_proj function
-            # with in_proj_weight and in_proj_bias
+
+
             _b = in_proj_bias
             _start = 0
             _end = embed_dim
@@ -105,8 +68,8 @@ def cross_attn_with_self_bias(
                 q_k = None
                 q_v = None
             else:
-                # This is inline in_proj function with
-                # in_proj_weight and in_proj_bias
+
+
                 _b = in_proj_bias
                 _start = embed_dim
                 _end = None
@@ -116,8 +79,8 @@ def cross_attn_with_self_bias(
                 k, v = F.linear(key, _w, _b).chunk(2, dim=-1)
                 q_k, q_v = F.linear(query, _w, _b).chunk(2, dim=-1)
         else:
-            # This is inline in_proj function with
-            # in_proj_weight and in_proj_bias
+
+
             _b = in_proj_bias
             _start = 0
             _end = embed_dim
@@ -126,8 +89,7 @@ def cross_attn_with_self_bias(
                 _b = _b[_start:_end]
             q = F.linear(query, _w, _b)
 
-            # This is inline in_proj function with
-            # in_proj_weight and in_proj_bias
+
             _b = in_proj_bias
             _start = embed_dim
             _end = embed_dim * 2
@@ -136,8 +98,8 @@ def cross_attn_with_self_bias(
                 _b = _b[_start:_end]
             k = F.linear(key, _w, _b)
             q_k = F.linear(query, _w, _b)
-            # This is inline in_proj function with
-            # in_proj_weight and in_proj_bias
+
+
             _b = in_proj_bias
             _start = embed_dim * 2
             _end = None
@@ -204,9 +166,8 @@ def cross_attn_with_self_bias(
             raise RuntimeError(
                 "attn_mask's dimension {} is not supported".format(
                     attn_mask.dim()))
-        # attn_mask's dim is 3 now.
 
-    # convert ByteTensor key_padding_mask to bool
+
     if key_padding_mask is not None and key_padding_mask.dtype == torch.uint8:
         warnings.warn(
             'Byte tensor for key_padding_mask in nn.MultiheadAttention '
@@ -300,10 +261,10 @@ def cross_attn_with_self_bias(
         )
         attn_output_weights = attn_output_weights.view(bsz * num_heads,
                                                        tgt_len, src_len)
-    # attn_out_weights: [bsz * num_heads, tgt_len, src_len]
-    # ->[bsz * num_heads, tgt_len, src_len+1]
+
+
     self_weight = (q * q_k).sum(
-        dim=-1, keepdim=True)  # [bsz * num_heads, tgt_len, 1]
+        dim=-1, keepdim=True)
     total_attn_output_weights = torch.cat([attn_output_weights, self_weight],
                                           dim=-1)
     total_attn_output_weights = F.softmax(total_attn_output_weights, dim=-1)
@@ -311,40 +272,31 @@ def cross_attn_with_self_bias(
         total_attn_output_weights, p=dropout_p, training=training)
     attn_output_weights = \
         total_attn_output_weights[:, :, : -1]
-    # [bsz * num_heads, tgt_len, src_len]
+
     self_weight = \
-        total_attn_output_weights[:, :, -1:]  # [bsz * num_heads, tgt_len, 1]
+        total_attn_output_weights[:, :, -1:]
 
     attn_output = torch.bmm(attn_output_weights,
-                            v)  # [bsz * num_heads, tgt_len, head_dim]
+                            v)
     attn_output = (attn_output + self_weight * q_v
-                   )  # [bsz * num_heads, tgt_len, head_dim]
+                   )
     assert list(attn_output.size()) == [bsz * num_heads, tgt_len, head_dim]
     attn_output = attn_output.transpose(0, 1).contiguous().view(
         tgt_len, bsz, embed_dim)
     attn_output = F.linear(attn_output, out_proj_weight, out_proj_bias)
 
     if need_weights:
-        # average attention weights over heads
+
         attn_output_weights = attn_output_weights.view(bsz, num_heads, tgt_len,
                                                        src_len)
-        return attn_output, attn_output_weights  # .sum(dim=1) / num_heads
+        return attn_output, attn_output_weights
     else:
         return attn_output, None
 
 
 def cross_attn_layer(tf_layer: BaseTransformerLayer, x, mem, attn_bias):
-    """Implementation of transformer layer with cross attention. The cross
-    attention shares the embedding weights with self-attention of tf_layer.
-    Args:
-        tf_layer: (TransformerEncoderLayer): The Module of transformer layer.
-        x (Tensor): query [K,N,C]
-        mem (Tensor): key and value [L,N,C]
-        attn_bias (Tensor): attention bias [N*num_head,K,L]
 
-    Return:
-        x (Tensor): cross attention output [K,N,C]
-    """
+
     self_attn_layer = tf_layer.attentions[0].attn
     attn_layer_paras = {
         'embed_dim_to_check': self_attn_layer.embed_dim,
@@ -374,12 +326,7 @@ def cross_attn_layer(tf_layer: BaseTransformerLayer, x, mem, attn_bias):
 
 
 class LayerNorm2d(nn.Module):
-    """A LayerNorm variant, popularized by Transformers, that performs point-
-    wise mean and variance normalization over the channel dimension for inputs
-    that have shape (batch_size, channels, height, width).
 
-    https://github.com/facebookresearch/ConvNeXt/blob/d1fa8f6fef0a165b27399986cc2bdacc92777e40/models/convnext.py#L119  # noqa B950
-    """
 
     def __init__(self, normalized_shape, eps=1e-6):
         super().__init__()
@@ -397,7 +344,7 @@ class LayerNorm2d(nn.Module):
 
 
 class MLP(nn.Module):
-    """Very simple multi-layer perceptron (also called FFN)"""
+
 
     def __init__(self,
                  input_dim,

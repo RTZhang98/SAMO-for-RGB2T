@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import torch
 import torch.nn as nn
 from mmcv.cnn import ConvModule
@@ -11,37 +10,7 @@ from ..utils import resize
 
 @MODELS.register_module()
 class ICNet(BaseModule):
-    """ICNet for Real-Time Semantic Segmentation on High-Resolution Images.
 
-    This backbone is the implementation of
-    `ICNet <https://arxiv.org/abs/1704.08545>`_.
-
-    Args:
-        backbone_cfg (dict): Config dict to build backbone. Usually it is
-            ResNet but it can also be other backbones.
-        in_channels (int): The number of input image channels. Default: 3.
-        layer_channels (Sequence[int]): The numbers of feature channels at
-            layer 2 and layer 4 in ResNet. It can also be other backbones.
-            Default: (512, 2048).
-        light_branch_middle_channels (int): The number of channels of the
-            middle layer in light branch. Default: 32.
-        psp_out_channels (int): The number of channels of the output of PSP
-            module. Default: 512.
-        out_channels (Sequence[int]): The numbers of output feature channels
-            at each branches. Default: (64, 256, 256).
-        pool_scales (tuple[int]): Pooling scales used in Pooling Pyramid
-            Module. Default: (1, 2, 3, 6).
-        conv_cfg (dict): Dictionary to construct and config conv layer.
-            Default: None.
-        norm_cfg (dict): Dictionary to construct and config norm layer.
-            Default: dict(type='BN').
-        act_cfg (dict): Dictionary to construct and config act layer.
-            Default: dict(type='ReLU').
-        align_corners (bool): align_corners argument of F.interpolate.
-            Default: False.
-        init_cfg (dict or list[dict], optional): Initialization config dict.
-            Default: None.
-    """
 
     def __init__(self,
                  backbone_cfg,
@@ -68,8 +37,7 @@ class ICNet(BaseModule):
         self.align_corners = align_corners
         self.backbone = MODELS.build(backbone_cfg)
 
-        # Note: Default `ceil_mode` is false in nn.MaxPool2d, set
-        # `ceil_mode=True` to keep information in the corner of feature map.
+
         self.backbone.maxpool = nn.MaxPool2d(
             kernel_size=3, stride=2, padding=1, ceil_mode=True)
 
@@ -134,10 +102,10 @@ class ICNet(BaseModule):
     def forward(self, x):
         output = []
 
-        # sub 1
+
         output.append(self.conv_sub1(x))
 
-        # sub 2
+
         x = resize(
             x,
             scale_factor=0.5,
@@ -149,7 +117,7 @@ class ICNet(BaseModule):
         x = self.backbone.layer2(x)
         output.append(self.conv_sub2(x))
 
-        # sub 4
+
         x = resize(
             x,
             scale_factor=0.5,

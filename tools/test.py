@@ -16,10 +16,10 @@ sys.path.insert(0, PROJECT_ROOT)
 from mmengine.config import Config
 from mmengine.runner import Runner
 
-import rein  # noqa: F401,E402
+import rein
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Evaluate SAMO+.")
+    parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=True)
     parser.add_argument("--checkpoint", required=True)
     parser.add_argument("--backbone", default="checkpoints/dinov2_converted_512x512.pth")

@@ -1,12 +1,3 @@
-# Copyright (c) Meta Platforms, Inc. and affiliates.
-#
-# This source code is licensed under the Apache License, Version 2.0
-# found in the LICENSE file in the root directory of this source tree.
-
-# References:
-#   https://github.com/facebookresearch/dino/blob/main/vision_transformer.py
-#   https://github.com/rwightman/pytorch-image-models/tree/master/timm/models/vision_transformer.py
-
 from functools import partial
 import math
 from typing import Sequence, Tuple, Union, Callable
@@ -68,7 +59,7 @@ class DinoVisionTransformer(BaseModule):
         proj_bias=True,
         drop_path_rate=0.0,
         drop_path_uniform=False,
-        init_values=None,  # for layerscale: None or 0 => no layerscale
+        init_values=None,
         embed_layer=PatchEmbed,
         act_layer=nn.GELU,
         block_fn=partial(Block, attn_class=MemEffAttention),
@@ -77,35 +68,15 @@ class DinoVisionTransformer(BaseModule):
         out_indices=[7, 11, 15, 23],
         init_cfg=None,
     ):
-        """
-        Args:
-            img_size (int, tuple): input image size
-            patch_size (int, tuple): patch size
-            in_chans (int): number of input channels
-            embed_dim (int): embedding dimension
-            depth (int): depth of transformer
-            num_heads (int): number of attention heads
-            mlp_ratio (int): ratio of mlp hidden dim to embedding dim
-            qkv_bias (bool): enable bias for qkv if True
-            proj_bias (bool): enable bias for proj in attn if True
-            ffn_bias (bool): enable bias for ffn if True
-            drop_path_rate (float): stochastic depth rate
-            drop_path_uniform (bool): apply uniform drop rate across blocks
-            weight_init (str): weight init scheme
-            init_values (float): layer-scale init values
-            embed_layer (nn.Module): patch embedding layer
-            act_layer (nn.Module): MLP activation layer
-            block_fn (nn.Module): transformer block class
-            ffn_layer (str): "mlp", "swiglu", "swiglufused" or "identity"
-            block_chunks: (int) split block sequence into block_chunks units for FSDP wrap
-        """
+
+
         super().__init__(init_cfg)
         norm_layer = partial(nn.LayerNorm, eps=1e-6)
         self.out_indices = out_indices
 
         self.num_features = (
             self.embed_dim
-        ) = embed_dim  # num_features for consistency with other models
+        ) = embed_dim
         self.num_tokens = 1
         self.n_blocks = depth
         self.num_heads = num_heads
@@ -121,15 +92,14 @@ class DinoVisionTransformer(BaseModule):
 
         self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
         self.pos_embed = nn.Parameter(torch.zeros(1, num_patches + self.num_tokens, embed_dim))
-        # self.cls_token = torch.zeros(1, 1, embed_dim, requires_grad=False)
-        # self.pos_embed = torch.zeros(1, num_patches + self.num_tokens, embed_dim, requires_grad=False)
+
 
         if drop_path_uniform is True:
             dpr = [drop_path_rate] * depth
         else:
             dpr = [
                 x.item() for x in torch.linspace(0, drop_path_rate, depth)
-            ]  # stochastic depth decay rule
+            ]
 
         if ffn_layer == "mlp":
             ffn_layer = Mlp
@@ -165,7 +135,7 @@ class DinoVisionTransformer(BaseModule):
             chunked_blocks = []
             chunksize = depth // block_chunks
             for i in range(0, depth, chunksize):
-                # this is to keep the block index consistent if we chunk the block list
+
                 chunked_blocks.append(
                     [nn.Identity()] * i + blocks_list[i : i + chunksize]
                 )
@@ -178,7 +148,7 @@ class DinoVisionTransformer(BaseModule):
         self.head = nn.Identity()
 
         self.mask_token = nn.Parameter(torch.zeros(1, embed_dim))
-        # self.mask_token = torch.zeros(1, embed_dim, requires_grad=False)
+
 
     def interpolate_pos_encoding(self, x, w, h):
         previous_dtype = x.dtype
@@ -192,8 +162,8 @@ class DinoVisionTransformer(BaseModule):
         dim = x.shape[-1]
         w0 = w // self.patch_size
         h0 = h // self.patch_size
-        # we add a small number to avoid floating point error in the interpolation
-        # see discussion at https://github.com/facebookresearch/dino/issues/8
+
+
         w0, h0 = w0 + 0.1, h0 + 0.1
 
         patch_pos_embed = nn.functional.interpolate(
@@ -268,7 +238,7 @@ class DinoVisionTransformer(BaseModule):
 
     def _get_intermediate_layers_not_chunked(self, x, n=1):
         x = self.prepare_tokens_with_masks(x)
-        # If n is an int, take the n last blocks. If it's a list, take them
+
         output, total_block_len = [], len(self.blocks)
         blocks_to_take = (
             range(total_block_len - n, total_block_len) if isinstance(n, int) else n
@@ -285,12 +255,12 @@ class DinoVisionTransformer(BaseModule):
     def _get_intermediate_layers_chunked(self, x, n=1):
         x = self.prepare_tokens_with_masks(x)
         output, i, total_block_len = [], 0, len(self.blocks[-1])
-        # If n is an int, take the n last blocks. If it's a list, take them
+
         blocks_to_take = (
             range(total_block_len - n, total_block_len) if isinstance(n, int) else n
         )
         for block_chunk in self.blocks:
-            for blk in block_chunk[i:]:  # Passing the nn.Identity()
+            for blk in block_chunk[i:]:
                 x = blk(x)
                 if i in blocks_to_take:
                     output.append(x)
@@ -303,7 +273,7 @@ class DinoVisionTransformer(BaseModule):
     def get_intermediate_layers(
         self,
         x: torch.Tensor,
-        n: Union[int, Sequence] = 1,  # Layers or n last layers to take
+        n: Union[int, Sequence] = 1,
         reshape: bool = False,
         return_class_token: bool = False,
         norm=True,

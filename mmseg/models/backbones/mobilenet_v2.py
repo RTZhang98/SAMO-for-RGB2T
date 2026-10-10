@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import warnings
 
 import torch.nn as nn
@@ -12,41 +11,8 @@ from ..utils import InvertedResidual, make_divisible
 
 @MODELS.register_module()
 class MobileNetV2(BaseModule):
-    """MobileNetV2 backbone.
 
-    This backbone is the implementation of
-    `MobileNetV2: Inverted Residuals and Linear Bottlenecks
-    <https://arxiv.org/abs/1801.04381>`_.
 
-    Args:
-        widen_factor (float): Width multiplier, multiply number of
-            channels in each layer by this amount. Default: 1.0.
-        strides (Sequence[int], optional): Strides of the first block of each
-            layer. If not specified, default config in ``arch_setting`` will
-            be used.
-        dilations (Sequence[int]): Dilation of each layer.
-        out_indices (None or Sequence[int]): Output from which stages.
-            Default: (7, ).
-        frozen_stages (int): Stages to be frozen (all param fixed).
-            Default: -1, which means not freezing any parameters.
-        conv_cfg (dict): Config dict for convolution layer.
-            Default: None, which means using conv2d.
-        norm_cfg (dict): Config dict for normalization layer.
-            Default: dict(type='BN').
-        act_cfg (dict): Config dict for activation layer.
-            Default: dict(type='ReLU6').
-        norm_eval (bool): Whether to set norm layers to eval mode, namely,
-            freeze running stats (mean and var). Note: Effect on Batch Norm
-            and its variants only. Default: False.
-        with_cp (bool): Use checkpoint or not. Using checkpoint will save some
-            memory while slowing down the training speed. Default: False.
-        pretrained (str, optional): model pretrained path. Default: None
-        init_cfg (dict or list[dict], optional): Initialization config dict.
-            Default: None
-    """
-
-    # Parameters to build layers. 3 parameters are needed to construct a
-    # layer, from left to right: expand_ratio, channel, num_blocks.
     arch_settings = [[1, 16, 1], [6, 24, 2], [6, 32, 3], [6, 64, 4],
                      [6, 96, 3], [6, 160, 3], [6, 320, 1]]
 
@@ -136,16 +102,8 @@ class MobileNetV2(BaseModule):
 
     def make_layer(self, out_channels, num_blocks, stride, dilation,
                    expand_ratio):
-        """Stack InvertedResidual blocks to build a layer for MobileNetV2.
 
-        Args:
-            out_channels (int): out_channels of block.
-            num_blocks (int): Number of blocks.
-            stride (int): Stride of the first block.
-            dilation (int): Dilation of the first block.
-            expand_ratio (int): Expand the number of channels of the
-                hidden layer in InvertedResidual by this ratio.
-        """
+
         layers = []
         for i in range(num_blocks):
             layers.append(

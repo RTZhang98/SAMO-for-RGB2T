@@ -1,24 +1,11 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 from mmseg.registry import DATASETS
 from .basesegdataset import BaseSegDataset
 
 
 @DATASETS.register_module()
 class MapillaryDataset_v1(BaseSegDataset):
-    """Mapillary Vistas Dataset.
 
-    Dataset paper link:
-    http://ieeexplore.ieee.org/document/8237796/
 
-    v1.2 contain 66 object classes.
-    (37 instance-specific)
-
-    v2.0 contain 124 object classes.
-    (70 instance-specific, 46 stuff, 8 void or crowd).
-
-    The ``img_suffix`` is fixed to '.jpg' and ``seg_map_suffix`` is
-    fixed to '.png' for Mapillary Vistas Dataset.
-    """
     METAINFO = dict(
         classes=('Bird', 'Ground Animal', 'Curb', 'Fence', 'Guard Rail',
                  'Barrier', 'Wall', 'Bike Lane', 'Crosswalk - Plain',
@@ -67,20 +54,8 @@ class MapillaryDataset_v1(BaseSegDataset):
 
 @DATASETS.register_module()
 class MapillaryDataset_v2(BaseSegDataset):
-    """Mapillary Vistas Dataset.
 
-    Dataset paper link:
-    http://ieeexplore.ieee.org/document/8237796/
 
-    v1.2 contain 66 object classes.
-    (37 instance-specific)
-
-    v2.0 contain 124 object classes.
-    (70 instance-specific, 46 stuff, 8 void or crowd).
-
-    The ``img_suffix`` is fixed to '.jpg' and ``seg_map_suffix`` is
-    fixed to '.png' for Mapillary Vistas Dataset.
-    """
     METAINFO = dict(
         classes=(
             'Bird', 'Ground Animal', 'Ambiguous Barrier', 'Concrete Block',

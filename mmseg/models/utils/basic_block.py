@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 from typing import Optional
 
 import torch.nn as nn
@@ -11,22 +10,7 @@ from mmseg.utils import OptConfigType
 
 
 class BasicBlock(BaseModule):
-    """Basic block from `ResNet <https://arxiv.org/abs/1512.03385>`_.
 
-    Args:
-        in_channels (int): Input channels.
-        channels (int): Output channels.
-        stride (int): Stride of the first block. Default: 1.
-        downsample (nn.Module, optional): Downsample operation on identity.
-            Default: None.
-        norm_cfg (dict, optional): Config dict for normalization layer.
-            Default: dict(type='BN').
-        act_cfg (dict, optional): Config dict for activation layer in
-            ConvModule. Default: dict(type='ReLU', inplace=True).
-        act_cfg_out (dict, optional): Config dict for activation layer at the
-            last of the block. Default: None.
-        init_cfg (dict, optional): Initialization config dict. Default: None.
-    """
 
     expansion = 1
 
@@ -76,22 +60,7 @@ class BasicBlock(BaseModule):
 
 
 class Bottleneck(BaseModule):
-    """Bottleneck block from `ResNet <https://arxiv.org/abs/1512.03385>`_.
 
-    Args:
-        in_channels (int): Input channels.
-        channels (int): Output channels.
-        stride (int): Stride of the first block. Default: 1.
-        downsample (nn.Module, optional): Downsample operation on identity.
-            Default: None.
-        norm_cfg (dict, optional): Config dict for normalization layer.
-            Default: dict(type='BN').
-        act_cfg (dict, optional): Config dict for activation layer in
-            ConvModule. Default: dict(type='ReLU', inplace=True).
-        act_cfg_out (dict, optional): Config dict for activation layer at
-            the last of the block. Default: None.
-        init_cfg (dict, optional): Initialization config dict. Default: None.
-    """
 
     expansion = 2
 

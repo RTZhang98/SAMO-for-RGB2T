@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import math
 
 import torch
@@ -12,17 +11,7 @@ from .decode_head import BaseDecodeHead
 
 
 class ReassembleBlocks(BaseModule):
-    """ViTPostProcessBlock, process cls_token in ViT backbone output and
-    rearrange the feature vector to feature map.
 
-    Args:
-        in_channels (int): ViT feature channels. Default: 768.
-        out_channels (List): output channels of each stage.
-            Default: [96, 192, 384, 768].
-        readout_type (str): Type of readout operation. Default: 'ignore'.
-        patch_size (int): The patch size. Default: 16.
-        init_cfg (dict, optional): Initialization config dict. Default: None.
-    """
 
     def __init__(self,
                  in_channels=768,
@@ -98,16 +87,7 @@ class ReassembleBlocks(BaseModule):
 
 
 class PreActResidualConvUnit(BaseModule):
-    """ResidualConvUnit, pre-activate residual unit.
 
-    Args:
-        in_channels (int): number of channels in the input feature map.
-        act_cfg (dict): dictionary to construct and config activation layer.
-        norm_cfg (dict): dictionary to construct and config norm layer.
-        stride (int): stride of the first block. Default: 1
-        dilation (int): dilation rate for convs layers. Default: 1.
-        init_cfg (dict, optional): Initialization config dict. Default: None.
-    """
 
     def __init__(self,
                  in_channels,
@@ -148,18 +128,7 @@ class PreActResidualConvUnit(BaseModule):
 
 
 class FeatureFusionBlock(BaseModule):
-    """FeatureFusionBlock, merge feature map from different stages.
 
-    Args:
-        in_channels (int): Input channels.
-        act_cfg (dict): The activation config for ResidualConvUnit.
-        norm_cfg (dict): Config dict for normalization layer.
-        expand (bool): Whether expand the channels in post process block.
-            Default: False.
-        align_corners (bool): align_corner setting for bilinear upsample.
-            Default: True.
-        init_cfg (dict, optional): Initialization config dict. Default: None.
-    """
 
     def __init__(self,
                  in_channels,
@@ -214,24 +183,7 @@ class FeatureFusionBlock(BaseModule):
 
 @MODELS.register_module()
 class DPTHead(BaseDecodeHead):
-    """Vision Transformers for Dense Prediction.
 
-    This head is implemented of `DPT <https://arxiv.org/abs/2103.13413>`_.
-
-    Args:
-        embed_dims (int): The embed dimension of the ViT backbone.
-            Default: 768.
-        post_process_channels (List): Out channels of post process conv
-            layers. Default: [96, 192, 384, 768].
-        readout_type (str): Type of readout operation. Default: 'ignore'.
-        patch_size (int): The patch size. Default: 16.
-        expand_channels (bool): Whether expand the channels in post process
-            block. Default: False.
-        act_cfg (dict): The activation config for residual conv unit.
-            Default dict(type='ReLU').
-        norm_cfg (dict): Config dict for normalization layer.
-            Default: dict(type='BN').
-    """
 
     def __init__(self,
                  embed_dims=768,

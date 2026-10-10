@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 from typing import Dict, List
 
 import torch
@@ -10,24 +9,7 @@ from torch import Tensor
 
 
 class DAPPM(BaseModule):
-    """DAPPM module in `DDRNet <https://arxiv.org/abs/2101.06085>`_.
 
-    Args:
-        in_channels (int): Input channels.
-        branch_channels (int): Branch channels.
-        out_channels (int): Output channels.
-        num_scales (int): Number of scales.
-        kernel_sizes (list[int]): Kernel sizes of each scale.
-        strides (list[int]): Strides of each scale.
-        paddings (list[int]): Paddings of each scale.
-        norm_cfg (dict): Config dict for normalization layer.
-            Default: dict(type='BN').
-        act_cfg (dict): Config dict for activation layer in ConvModule.
-            Default: dict(type='ReLU', inplace=True).
-        conv_cfg (dict): Config dict for convolution layer in ConvModule.
-            Default: dict(order=('norm', 'act', 'conv'), bias=False).
-        upsample_mode (str): Upsample mode. Default: 'bilinear'.
-    """
 
     def __init__(self,
                  in_channels: int,
@@ -132,24 +114,7 @@ class DAPPM(BaseModule):
 
 
 class PAPPM(DAPPM):
-    """PAPPM module in `PIDNet <https://arxiv.org/abs/2206.02066>`_.
 
-    Args:
-        in_channels (int): Input channels.
-        branch_channels (int): Branch channels.
-        out_channels (int): Output channels.
-        num_scales (int): Number of scales.
-        kernel_sizes (list[int]): Kernel sizes of each scale.
-        strides (list[int]): Strides of each scale.
-        paddings (list[int]): Paddings of each scale.
-        norm_cfg (dict): Config dict for normalization layer.
-            Default: dict(type='BN', momentum=0.1).
-        act_cfg (dict): Config dict for activation layer in ConvModule.
-            Default: dict(type='ReLU', inplace=True).
-        conv_cfg (dict): Config dict for convolution layer in ConvModule.
-            Default: dict(order=('norm', 'act', 'conv'), bias=False).
-        upsample_mode (str): Upsample mode. Default: 'bilinear'.
-    """
 
     def __init__(self,
                  in_channels: int,

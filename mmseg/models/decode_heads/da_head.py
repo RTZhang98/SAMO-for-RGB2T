@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 from typing import List, Tuple
 
 import torch
@@ -13,12 +12,7 @@ from .decode_head import BaseDecodeHead
 
 
 class PAM(_SelfAttentionBlock):
-    """Position Attention Module (PAM)
 
-    Args:
-        in_channels (int): Input channels of key/query feature.
-        channels (int): Output channels of key/query transform.
-    """
 
     def __init__(self, in_channels, channels):
         super().__init__(
@@ -42,7 +36,7 @@ class PAM(_SelfAttentionBlock):
         self.gamma = Scale(0)
 
     def forward(self, x):
-        """Forward function."""
+
         out = super().forward(x, x)
 
         out = self.gamma(out) + x
@@ -50,14 +44,14 @@ class PAM(_SelfAttentionBlock):
 
 
 class CAM(nn.Module):
-    """Channel Attention Module (CAM)"""
+
 
     def __init__(self):
         super().__init__()
         self.gamma = Scale(0)
 
     def forward(self, x):
-        """Forward function."""
+
         batch_size, channels, height, width = x.size()
         proj_query = x.view(batch_size, channels, -1)
         proj_key = x.view(batch_size, channels, -1).permute(0, 2, 1)
@@ -76,14 +70,7 @@ class CAM(nn.Module):
 
 @MODELS.register_module()
 class DAHead(BaseDecodeHead):
-    """Dual Attention Network for Scene Segmentation.
 
-    This head is the implementation of `DANet
-    <https://arxiv.org/abs/1809.02983>`_.
-
-    Args:
-        pam_channels (int): The channels of Position Attention Module(PAM).
-    """
 
     def __init__(self, pam_channels, **kwargs):
         super().__init__(**kwargs)
@@ -129,21 +116,21 @@ class DAHead(BaseDecodeHead):
             self.channels, self.num_classes, kernel_size=1)
 
     def pam_cls_seg(self, feat):
-        """PAM feature classification."""
+
         if self.dropout is not None:
             feat = self.dropout(feat)
         output = self.pam_conv_seg(feat)
         return output
 
     def cam_cls_seg(self, feat):
-        """CAM feature classification."""
+
         if self.dropout is not None:
             feat = self.dropout(feat)
         output = self.cam_conv_seg(feat)
         return output
 
     def forward(self, inputs):
-        """Forward function."""
+
         x = self._transform_inputs(inputs)
         pam_feat = self.pam_in_conv(x)
         pam_feat = self.pam(pam_feat)
@@ -162,13 +149,13 @@ class DAHead(BaseDecodeHead):
 
     def predict(self, inputs, batch_img_metas: List[dict], test_cfg,
                 **kwargs) -> List[Tensor]:
-        """Forward function for testing, only ``pam_cam`` is used."""
+
         seg_logits = self.forward(inputs)[0]
         return self.predict_by_feat(seg_logits, batch_img_metas, **kwargs)
 
     def loss_by_feat(self, seg_logit: Tuple[Tensor],
                      batch_data_samples: SampleList, **kwargs) -> dict:
-        """Compute ``pam_cam``, ``pam``, ``cam`` loss."""
+
         pam_cam_seg_logit, pam_seg_logit, cam_seg_logit = seg_logit
         loss = dict()
         loss.update(

@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 from typing import Dict, List, Optional
 
 import cv2
@@ -16,53 +15,7 @@ from mmseg.utils import get_classes, get_palette
 
 @VISUALIZERS.register_module()
 class SegLocalVisualizer(Visualizer):
-    """Local Visualizer.
 
-    Args:
-        name (str): Name of the instance. Defaults to 'visualizer'.
-        image (np.ndarray, optional): the origin image to draw. The format
-            should be RGB. Defaults to None.
-        vis_backends (list, optional): Visual backend config list.
-            Defaults to None.
-        save_dir (str, optional): Save file dir for all storage backends.
-            If it is None, the backend storage will not save any data.
-        classes (list, optional): Input classes for result rendering, as the
-            prediction of segmentation model is a segment map with label
-            indices, `classes` is a list which includes items responding to the
-            label indices. If classes is not defined, visualizer will take
-            `cityscapes` classes by default. Defaults to None.
-        palette (list, optional): Input palette for result rendering, which is
-            a list of color palette responding to the classes. Defaults to None.
-        dataset_name (str, optional): `Dataset name or alias <https://github.com/open-mmlab/mmsegmentation/blob/main/mmseg/utils/class_names.py#L302-L317>`_
-            visulizer will use the meta information of the dataset i.e. classes
-            and palette, but the `classes` and `palette` have higher priority.
-            Defaults to None.
-        alpha (int, float): The transparency of segmentation mask.
-                Defaults to 0.8.
-
-    Examples:
-        >>> import numpy as np
-        >>> import torch
-        >>> from mmengine.structures import PixelData
-        >>> from mmseg.structures import SegDataSample
-        >>> from mmseg.visualization import SegLocalVisualizer
-
-        >>> seg_local_visualizer = SegLocalVisualizer()
-        >>> image = np.random.randint(0, 256,
-        ...                     size=(10, 12, 3)).astype('uint8')
-        >>> gt_sem_seg_data = dict(data=torch.randint(0, 2, (1, 10, 12)))
-        >>> gt_sem_seg = PixelData(**gt_sem_seg_data)
-        >>> gt_seg_data_sample = SegDataSample()
-        >>> gt_seg_data_sample.gt_sem_seg = gt_sem_seg
-        >>> seg_local_visualizer.dataset_meta = dict(
-        >>>     classes=('background', 'foreground'),
-        >>>     palette=[[120, 120, 120], [6, 230, 230]])
-        >>> seg_local_visualizer.add_datasample('visualizer_example',
-        ...                         image, gt_seg_data_sample)
-        >>> seg_local_visualizer.add_datasample(
-        ...                        'visualizer_example', image,
-        ...                         gt_seg_data_sample, show=True)
-    """  # noqa
 
     def __init__(self,
                  name: str = 'visualizer',
@@ -79,11 +32,8 @@ class SegLocalVisualizer(Visualizer):
         self.set_dataset_meta(palette, classes, dataset_name)
 
     def _get_center_loc(self, mask: np.ndarray) -> np.ndarray:
-        """Get semantic seg center coordinate.
 
-        Args:
-            mask: np.ndarray: get from sem_seg
-        """
+
         loc = np.argwhere(mask == 1)
 
         loc_sort = np.array(
@@ -104,27 +54,8 @@ class SegLocalVisualizer(Visualizer):
                       classes: Optional[List],
                       palette: Optional[List],
                       with_labels: Optional[bool] = True) -> np.ndarray:
-        """Draw semantic seg of GT or prediction.
 
-        Args:
-            image (np.ndarray): The image to draw.
-            sem_seg (:obj:`PixelData`): Data structure for pixel-level
-                annotations or predictions.
-            classes (list, optional): Input classes for result rendering, as
-                the prediction of segmentation model is a segment map with
-                label indices, `classes` is a list which includes items
-                responding to the label indices. If classes is not defined,
-                visualizer will take `cityscapes` classes by default.
-                Defaults to None.
-            palette (list, optional): Input palette for result rendering, which
-                is a list of color palette responding to the classes.
-                Defaults to None.
-            with_labels(bool, optional): Add semantic labels in visualization
-                result, Default to True.
 
-        Returns:
-            np.ndarray: the drawn image which channel is RGB.
-        """
         num_classes = len(classes)
 
         sem_seg = sem_seg.cpu().data
@@ -141,7 +72,7 @@ class SegLocalVisualizer(Visualizer):
 
         if with_labels:
             font = cv2.FONT_HERSHEY_SIMPLEX
-            # (0,1] to change the size of the text relative to the image
+
             scale = 0.05
             fontScale = min(image.shape[0], image.shape[1]) / (25 / scale)
             fontColor = (255, 255, 255)
@@ -183,32 +114,8 @@ class SegLocalVisualizer(Visualizer):
 
     def _draw_depth_map(self, image: np.ndarray,
                         depth_map: PixelData) -> np.ndarray:
-        """Draws a depth map on a given image.
 
-        This function takes an image and a depth map as input,
-        renders the depth map, and concatenates it with the original image.
-        Finally, it updates the internal image state of the visualizer with
-        the concatenated result.
 
-        Args:
-            image (np.ndarray): The original image where the depth map will
-                be drawn. The array should be in the format HxWx3 where H is
-                the height, W is the width.
-
-            depth_map (PixelData): Depth map to be drawn. The depth map
-                should be in the form of a PixelData object. It will be
-                converted to a torch tensor if it is a numpy array.
-
-        Returns:
-            np.ndarray: The concatenated image with the depth map drawn.
-
-        Example:
-            >>> depth_map_data = PixelData(data=torch.rand(1, 10, 10))
-            >>> image = np.random.randint(0, 256,
-            >>>                           size=(10, 10, 3)).astype('uint8')
-            >>> visualizer = SegLocalVisualizer()
-            >>> visualizer._draw_depth_map(image, depth_map_data)
-        """
         depth_map = depth_map.cpu().data
         if isinstance(depth_map, np.ndarray):
             depth_map = torch.from_numpy(depth_map)
@@ -224,26 +131,8 @@ class SegLocalVisualizer(Visualizer):
                          classes: Optional[List] = None,
                          palette: Optional[List] = None,
                          dataset_name: Optional[str] = None) -> None:
-        """Set meta information to visualizer.
 
-        Args:
-            classes (list, optional): Input classes for result rendering, as
-                the prediction of segmentation model is a segment map with
-                label indices, `classes` is a list which includes items
-                responding to the label indices. If classes is not defined,
-                visualizer will take `cityscapes` classes by default.
-                Defaults to None.
-            palette (list, optional): Input palette for result rendering, which
-                is a list of color palette responding to the classes.
-                Defaults to None.
-            dataset_name (str, optional): `Dataset name or alias <https://github.com/open-mmlab/mmsegmentation/blob/main/mmseg/utils/class_names.py#L302-L317>`_
-                visulizer will use the meta information of the dataset i.e.
-                classes and palette, but the `classes` and `palette` have
-                higher priority. Defaults to None.
-        """  # noqa
-        # Set default value. When calling
-        # `SegLocalVisualizer().dataset_meta=xxx`,
-        # it will override the default value.
+
         if dataset_name is None:
             dataset_name = 'cityscapes'
         classes = classes if classes else get_classes(dataset_name)
@@ -262,38 +151,12 @@ class SegLocalVisualizer(Visualizer):
             draw_pred: bool = True,
             show: bool = False,
             wait_time: float = 0,
-            # TODO: Supported in mmengine's Viusalizer.
+
             out_file: Optional[str] = None,
             step: int = 0,
             with_labels: Optional[bool] = True) -> None:
-        """Draw datasample and save to all backends.
 
-        - If GT and prediction are plotted at the same time, they are
-        displayed in a stitched image where the left image is the
-        ground truth and the right image is the prediction.
-        - If ``show`` is True, all storage backends are ignored, and
-        the images will be displayed in a local window.
-        - If ``out_file`` is specified, the drawn image will be
-        saved to ``out_file``. it is usually used when the display
-        is not available.
 
-        Args:
-            name (str): The image identifier.
-            image (np.ndarray): The image to draw.
-            gt_sample (:obj:`SegDataSample`, optional): GT SegDataSample.
-                Defaults to None.
-            pred_sample (:obj:`SegDataSample`, optional): Prediction
-                SegDataSample. Defaults to None.
-            draw_gt (bool): Whether to draw GT SegDataSample. Default to True.
-            draw_pred (bool): Whether to draw Prediction SegDataSample.
-                Defaults to True.
-            show (bool): Whether to display the drawn image. Default to False.
-            wait_time (float): The interval of show (s). Defaults to 0.
-            out_file (str): Path to output file. Defaults to None.
-            step (int): Global step value to record. Defaults to 0.
-            with_labels(bool, optional): Add semantic labels in visualization
-                result, Defaults to True.
-        """
         classes = self.dataset_meta.get('classes', None)
         palette = self.dataset_meta.get('palette', None)
 

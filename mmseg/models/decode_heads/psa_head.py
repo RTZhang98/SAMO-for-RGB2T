@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -16,22 +15,7 @@ except ModuleNotFoundError:
 
 @MODELS.register_module()
 class PSAHead(BaseDecodeHead):
-    """Point-wise Spatial Attention Network for Scene Parsing.
 
-    This head is the implementation of `PSANet
-    <https://hszhao.github.io/papers/eccv18_psanet.pdf>`_.
-
-    Args:
-        mask_size (tuple[int]): The PSA mask size. It usually equals input
-            size.
-        psa_type (str): The type of psa module. Options are 'collect',
-            'distribute', 'bi-direction'. Default: 'bi-direction'
-        compact (bool): Whether use compact map for 'collect' mode.
-            Default: True.
-        shrink_factor (int): The downsample factors of psa mask. Default: 2.
-        normalization_factor (float): The normalize factor of attention.
-        psa_softmax (bool): Whether use softmax for attention.
-    """
 
     def __init__(self,
                  mask_size,
@@ -112,7 +96,7 @@ class PSAHead(BaseDecodeHead):
             act_cfg=self.act_cfg)
 
     def forward(self, inputs):
-        """Forward function."""
+
         x = self._transform_inputs(inputs)
         identity = x
         align_corners = self.align_corners

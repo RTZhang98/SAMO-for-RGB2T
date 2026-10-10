@@ -1,11 +1,10 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 from mmseg.registry import DATASETS
 from .cityscapes import CityscapesDataset
 
 
 @DATASETS.register_module()
 class NightDrivingDataset(CityscapesDataset):
-    """NightDrivingDataset dataset."""
+
 
     def __init__(self,
                  img_suffix='_leftImg8bit.png',

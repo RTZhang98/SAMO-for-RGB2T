@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import torch
 import torch.nn as nn
 from mmcv.cnn import ConvModule
@@ -10,15 +9,7 @@ from .decode_head import BaseDecodeHead
 
 @MODELS.register_module()
 class SETRMLAHead(BaseDecodeHead):
-    """Multi level feature aggretation head of SETR.
 
-    MLA head of `SETR  <https://arxiv.org/pdf/2012.15840.pdf>`_.
-
-    Args:
-        mlahead_channels (int): Channels of conv-conv-4x of multi-level feature
-            aggregation. Default: 128.
-        up_scale (int): The scale factor of interpolate. Default:4.
-    """
 
     def __init__(self, mla_channels=128, up_scale=4, **kwargs):
         super().__init__(input_transform='multiple_select', **kwargs)
@@ -26,7 +17,7 @@ class SETRMLAHead(BaseDecodeHead):
 
         num_inputs = len(self.in_channels)
 
-        # Refer to self.cls_seg settings of BaseDecodeHead
+
         assert self.channels == num_inputs * mla_channels
 
         self.up_convs = nn.ModuleList()

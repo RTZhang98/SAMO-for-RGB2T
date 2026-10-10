@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import torch
 import torch.nn as nn
 from mmcv.cnn import ConvModule
@@ -11,15 +10,7 @@ from .decode_head import BaseDecodeHead
 
 @MODELS.register_module()
 class LRASPPHead(BaseDecodeHead):
-    """Lite R-ASPP (LRASPP) head is proposed in Searching for MobileNetV3.
 
-    This head is the improved implementation of `Searching for MobileNetV3
-    <https://ieeexplore.ieee.org/document/9008835>`_.
-
-    Args:
-        branch_channels (tuple[int]): The number of output channels in every
-            each branch. Default: (32, 64).
-    """
 
     def __init__(self, branch_channels=(32, 64), **kwargs):
         super().__init__(**kwargs)
@@ -67,7 +58,7 @@ class LRASPPHead(BaseDecodeHead):
                 bias=False))
 
     def forward(self, inputs):
-        """Forward function."""
+
         inputs = self._transform_inputs(inputs)
 
         x = inputs[-1]

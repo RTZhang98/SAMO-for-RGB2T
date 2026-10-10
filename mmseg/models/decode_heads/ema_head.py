@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import math
 
 import torch
@@ -12,7 +11,7 @@ from .decode_head import BaseDecodeHead
 
 
 def reduce_mean(tensor):
-    """Reduce mean when distributed training."""
+
     if not (dist.is_available() and dist.is_initialized()):
         return tensor
     tensor = tensor.clone()
@@ -21,13 +20,7 @@ def reduce_mean(tensor):
 
 
 class EMAModule(nn.Module):
-    """Expectation Maximization Attention Module used in EMANet.
 
-    Args:
-        channels (int): Channels of the whole module.
-        num_bases (int): Number of bases.
-        num_stages (int): Number of the EM iterations.
-    """
 
     def __init__(self, channels, num_bases, num_stages, momentum):
         super().__init__()
@@ -38,28 +31,28 @@ class EMAModule(nn.Module):
 
         bases = torch.zeros(1, channels, self.num_bases)
         bases.normal_(0, math.sqrt(2. / self.num_bases))
-        # [1, channels, num_bases]
+
         bases = F.normalize(bases, dim=1, p=2)
         self.register_buffer('bases', bases)
 
     def forward(self, feats):
-        """Forward function."""
+
         batch_size, channels, height, width = feats.size()
-        # [batch_size, channels, height*width]
+
         feats = feats.view(batch_size, channels, height * width)
-        # [batch_size, channels, num_bases]
+
         bases = self.bases.repeat(batch_size, 1, 1)
 
         with torch.no_grad():
             for i in range(self.num_stages):
-                # [batch_size, height*width, num_bases]
+
                 attention = torch.einsum('bcn,bck->bnk', feats, bases)
                 attention = F.softmax(attention, dim=2)
-                # l1 norm
+
                 attention_normed = F.normalize(attention, dim=1, p=1)
-                # [batch_size, channels, num_bases]
+
                 bases = torch.einsum('bcn,bnk->bck', feats, attention_normed)
-                # l2 norm
+
                 bases = F.normalize(bases, dim=1, p=2)
 
         feats_recon = torch.einsum('bck,bnk->bcn', bases, attention)
@@ -68,7 +61,7 @@ class EMAModule(nn.Module):
         if self.training:
             bases = bases.mean(dim=0, keepdim=True)
             bases = reduce_mean(bases)
-            # l2 norm
+
             bases = F.normalize(bases, dim=1, p=2)
             self.bases = (1 -
                           self.momentum) * self.bases + self.momentum * bases
@@ -78,19 +71,7 @@ class EMAModule(nn.Module):
 
 @MODELS.register_module()
 class EMAHead(BaseDecodeHead):
-    """Expectation Maximization Attention Networks for Semantic Segmentation.
 
-    This head is the implementation of `EMANet
-    <https://arxiv.org/abs/1907.13426>`_.
-
-    Args:
-        ema_channels (int): EMA module channels
-        num_bases (int): Number of bases.
-        num_stages (int): Number of the EM iterations.
-        concat_input (bool): Whether concat the input and output of convs
-            before classification layer. Default: True
-        momentum (float): Momentum to update the base. Default: 0.1.
-    """
 
     def __init__(self,
                  ema_channels,
@@ -116,7 +97,7 @@ class EMAHead(BaseDecodeHead):
             conv_cfg=self.conv_cfg,
             norm_cfg=self.norm_cfg,
             act_cfg=self.act_cfg)
-        # project (0, inf) -> (-inf, inf)
+
         self.ema_mid_conv = ConvModule(
             self.ema_channels,
             self.ema_channels,
@@ -153,7 +134,7 @@ class EMAHead(BaseDecodeHead):
                 act_cfg=self.act_cfg)
 
     def forward(self, inputs):
-        """Forward function."""
+
         x = self._transform_inputs(inputs)
         feats = self.ema_in_conv(x)
         identity = feats

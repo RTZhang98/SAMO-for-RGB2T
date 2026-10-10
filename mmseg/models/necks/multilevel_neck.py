@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import torch.nn as nn
 from mmcv.cnn import ConvModule
 from mmengine.model.weight_init import xavier_init
@@ -9,19 +8,7 @@ from ..utils import resize
 
 @MODELS.register_module()
 class MultiLevelNeck(nn.Module):
-    """MultiLevelNeck.
 
-    A neck structure connect vit backbone and decoder_heads.
-
-    Args:
-        in_channels (List[int]): Number of input channels per scale.
-        out_channels (int): Number of output channels (used at each scale).
-        scales (List[float]): Scale factors for each input feature map.
-            Default: [0.5, 1, 2, 4]
-        norm_cfg (dict): Config dict for normalization layer. Default: None.
-        act_cfg (dict): Config dict for activation layer in ConvModule.
-            Default: None.
-    """
 
     def __init__(self,
                  in_channels,
@@ -56,7 +43,7 @@ class MultiLevelNeck(nn.Module):
                     norm_cfg=norm_cfg,
                     act_cfg=act_cfg))
 
-    # default init_weights for conv(msra) and norm in ConvModule
+
     def init_weights(self):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -68,7 +55,7 @@ class MultiLevelNeck(nn.Module):
             lateral_conv(inputs[i])
             for i, lateral_conv in enumerate(self.lateral_convs)
         ]
-        # for len(inputs) not equal to self.num_outs
+
         if len(inputs) == 1:
             inputs = [inputs[0] for _ in range(self.num_outs)]
         outs = []

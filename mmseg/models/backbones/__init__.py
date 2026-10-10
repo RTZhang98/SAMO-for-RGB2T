@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 from .beit import BEiT
 from .bisenetv1 import BiSeNetV1
 from .bisenetv2 import BiSeNetV2

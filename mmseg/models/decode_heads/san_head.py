@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 from functools import partial
 from typing import Dict, List, Tuple
 
@@ -25,8 +24,7 @@ from .decode_head import BaseDecodeHead
 
 
 class MLPMaskDecoder(nn.Module):
-    """Module for decoding query and visual features with MLP layers to
-    generate the attention biases and the mask proposals."""
+
 
     def __init__(
         self,
@@ -44,10 +42,10 @@ class MLPMaskDecoder(nn.Module):
         self.total_layers = total_layers
 
         dense_affine_func = partial(nn.Conv2d, kernel_size=1)
-        # Query Branch
+
         self.query_mlp = MLP(in_channels, mlp_channels, embed_channels,
                              mlp_num_layers)
-        # Pixel Branch
+
         self.pix_mlp = MLP(
             in_channels,
             mlp_channels,
@@ -55,7 +53,7 @@ class MLPMaskDecoder(nn.Module):
             mlp_num_layers,
             affine_func=dense_affine_func,
         )
-        # Attention Bias Branch
+
         self.attn_mlp = MLP(
             in_channels,
             mlp_channels,
@@ -70,21 +68,14 @@ class MLPMaskDecoder(nn.Module):
 
     def forward(self, query: torch.Tensor,
                 x: torch.Tensor) -> Tuple[torch.Tensor, List[torch.Tensor]]:
-        """Forward function.
-        Args:
-            query (Tensor): Query Tokens [B,N,C].
-            x (Tensor): Visual features [B,C,H,W]
 
-        Return:
-            mask_preds (Tensor): Mask proposals.
-            attn_bias (List[Tensor]): List of attention bias.
-        """
+
         query = self.query_mlp(query)
         pix = self.pix_mlp(x)
         b, c, h, w = pix.shape
-        # preidict mask
+
         mask_preds = torch.einsum('bqc,bchw->bqhw', query, pix)
-        # generate attn bias
+
         attn = self.attn_mlp(x)
         attn = attn.reshape(b, self.total_layers, self.total_heads, c, h, w)
         attn_bias = torch.einsum('bqc,blnchw->blnqhw', query, attn)
@@ -95,26 +86,7 @@ class MLPMaskDecoder(nn.Module):
 
 
 class SideAdapterNetwork(nn.Module):
-    """Side Adapter Network for predicting mask proposals and attention bias.
 
-    Args:
-        in_channels (int): Number of input channels. Default: 3.
-        clip_channels (int): Number of channels of visual features.
-            Default: 768.
-        embed_dims (int): embedding dimension. Default: 240.
-        patch_size (int): The patch size. Default: 16.
-        patch_bias (bool): Whether use bias in patch embedding.
-            Default: True.
-        num_queries (int): Number of queries for mask proposals.
-            Default: 100.
-        fusion_index (List[int]): The layer number of the encode
-            transformer to fuse with the CLIP feature.
-            Default: [0, 1, 2, 3].
-        cfg_encoder (ConfigType): Configs for the encode layers.
-        cfg_decoder (ConfigType): Configs for the decode layers.
-        norm_cfg (dict): Config dict for normalization layer.
-            Default: dict(type='LN').
-    """
 
     def __init__(
             self,
@@ -192,7 +164,7 @@ class SideAdapterNetwork(nn.Module):
     def fuse_clip(self, fused_index: int, x: torch.Tensor,
                   clip_feature: torch.Tensor, hwshape: Tuple[int,
                                                              int], L: int):
-        """Fuse CLIP feature and visual tokens."""
+
         fused_clip = (resize(
             self.conv_clips[fused_index](clip_feature.contiguous()),
             size=hwshape,
@@ -205,13 +177,13 @@ class SideAdapterNetwork(nn.Module):
     def encode_feature(self, image: torch.Tensor,
                        clip_features: List[torch.Tensor],
                        deep_supervision_idxs: List[int]) -> List[List]:
-        """Encode images by a lightweight vision transformer."""
+
         assert len(self.fusion_index) == len(clip_features)
         x, hwshape = self.patch_embed(image)
         ori_h, ori_w = self.patch_embed.init_out_size
         pos_embed = self.pos_embed
         if self.pos_embed.shape[1] != x.shape[1]:
-            # resize the position embedding
+
             pos_embed = (
                 resize(
                     self.pos_embed.reshape(1, ori_h, ori_w,
@@ -264,7 +236,7 @@ class SideAdapterNetwork(nn.Module):
         self, image: torch.Tensor, clip_features: List[torch.Tensor],
         deep_supervision_idxs: List[int]
     ) -> Tuple[List[torch.Tensor], List[List[torch.Tensor]]]:
-        """Forward function."""
+
         features = self.encode_feature(image, clip_features,
                                        deep_supervision_idxs)
         mask_embeds, attn_biases = self.decode_feature(features)
@@ -272,37 +244,7 @@ class SideAdapterNetwork(nn.Module):
 
 
 class RecWithAttnbias(nn.Module):
-    """Mask recognition module by applying the attention biases to rest deeper
-    CLIP layers.
 
-    Args:
-        sos_token_format (str): The format of sos token. It should be
-            chosen from  ["cls_token", "learnable_token", "pos_embedding"].
-            Default: 'cls_token'.
-        sos_token_num (int): Number of sos token. It should be equal to
-            the number of quries. Default: 100.
-        num_layers (int): Number of rest CLIP layers for mask recognition.
-            Default: 3.
-        cross_attn (bool): Whether use cross attention to update sos token.
-            Default: False.
-        embed_dims (int): The feature dimension of CLIP layers.
-            Default: 768.
-        num_heads (int): Parallel attention heads of CLIP layers.
-            Default: 768.
-        mlp_ratio (int): Ratio of mlp hidden dim to embedding dim.
-            Default: 4.
-        qkv_bias (bool): Whether to use bias in multihead-attention.
-            Default: True.
-        out_dims (int): Number of channels of the output mask proposals.
-            It should be equal to the out_dims of text_encoder.
-            Default: 512.
-        final_norm (True): Whether use norm layer for sos token.
-        act_cfg (dict): The activation config for FFNs.
-            Default: dict(type='GELU').
-        norm_cfg (dict): Config dict for normalization layer.
-            Default: dict(type='LN').
-        frozen_exclude (List): List of parameters that are not to be frozen.
-    """
 
     def __init__(self,
                  sos_token_format: str = 'cls_token',
@@ -377,10 +319,10 @@ class RecWithAttnbias(nn.Module):
     def _build_attn_biases(self, attn_biases, target_shape):
         formatted_attn_biases = []
         for attn_bias in attn_biases:
-            # convert it to proper format: N*num_head,L,L
-            # attn_bias: [N, num_head/1, num_sos,H,W]
+
+
             n, num_head, num_sos, h, w = attn_bias.shape
-            # reshape and downsample
+
             attn_bias = F.adaptive_max_pool2d(
                 attn_bias.reshape(n, num_head * num_sos, h, w),
                 output_size=target_shape)
@@ -394,10 +336,10 @@ class RecWithAttnbias(nn.Module):
             attn_bias = attn_bias.reshape(n * true_num_head, num_sos, -1)
             L = attn_bias.shape[-1]
             if self.cross_attn:
-                # [n*num_head, num_sos, L]
+
                 formatted_attn_biases.append(attn_bias)
             else:
-                # [n*num_head, num_sos+1+L, num_sos+1+L]
+
                 new_attn_bias = attn_bias.new_zeros(num_sos + 1 + L,
                                                     num_sos + 1 + L)
                 new_attn_bias[:, :num_sos] = -100
@@ -416,21 +358,17 @@ class RecWithAttnbias(nn.Module):
         return formatted_attn_biases
 
     def forward(self, bias: List[Tensor], feature: List[Tensor]):
-        """Forward function to recognize the category of masks
-        Args:
-            bias (List[Tensor]): Attention bias for transformer layers
-            feature (List[Tensor]): Output of the image encoder,
-            including cls_token and img_feature.
-        """
+
+
         cls_token = feature[1].unsqueeze(0)
         img_feature = feature[0]
         b, c, h, w = img_feature.shape
-        # construct clip shadow features
+
         x = torch.cat(
             [cls_token,
              img_feature.reshape(b, c, -1).permute(2, 0, 1)])
 
-        # construct sos token
+
         if self.sos_token_format == 'cls_token':
             sos_token = cls_token.repeat(self.sos_token_num, 1, 1)
         elif self.sos_token_format == 'learnable_token':
@@ -438,7 +376,7 @@ class RecWithAttnbias(nn.Module):
         elif self.sos_token_format == 'pos_embedding':
             sos_token = self.sos_token.expand(-1, b, -1) + cls_token
 
-        # construct attn bias
+
         attn_biases = self._build_attn_biases(bias, target_shape=(h, w))
 
         if self.cross_attn:
@@ -458,7 +396,7 @@ class RecWithAttnbias(nn.Module):
                 x = block(x, attn_masks=[attn_biases[i]])
             sos_token = x[:self.sos_token_num]
 
-        sos_token = sos_token.permute(1, 0, 2)  # LND -> NLD
+        sos_token = sos_token.permute(1, 0, 2)
         sos_token = self.ln_post(sos_token)
         sos_token = self.proj(sos_token)
         if self.final_norm:
@@ -468,21 +406,7 @@ class RecWithAttnbias(nn.Module):
 
 @MODELS.register_module()
 class SideAdapterCLIPHead(BaseDecodeHead):
-    """Side Adapter Network (SAN) for open-vocabulary semantic segmentation
-    with pre-trained vision-language model.
 
-    This decode head is the implementation of `Side Adapter Network
-    for Open-Vocabulary Semantic Segmentation`
-    <https://arxiv.org/abs/2302.12242>.
-    Modified from https://github.com/MendelXu/SAN/blob/main/san/model/side_adapter/side_adapter.py # noqa:E501
-    Copyright (c) 2023 MendelXu.
-    Licensed under the MIT License
-
-    Args:
-        num_classes (int): the number of classes.
-        san_cfg (ConfigType): Configs for SideAdapterNetwork module
-        maskgen_cfg (ConfigType): Configs for RecWithAttnbias module
-    """
 
     def __init__(self, num_classes: int, san_cfg: ConfigType,
                  maskgen_cfg: ConfigType, deep_supervision_idxs: List[int],
@@ -528,29 +452,20 @@ class SideAdapterCLIPHead(BaseDecodeHead):
 
     def forward(self, inputs: Tuple[Tensor],
                 deep_supervision_idxs) -> Tuple[List]:
-        """Forward function.
 
-        Args:
-            inputs (Tuple[Tensor]): A triplet including images,
-            list of multi-level visual features from image encoder and
-            class embeddings from text_encoder.
 
-        Returns:
-            mask_props (List[Tensor]): Mask proposals predicted by SAN.
-            mask_logits (List[Tensor]): Class logits of mask proposals.
-        """
         imgs, clip_feature, class_embeds = inputs
-        # predict mask proposals and attention bias
+
         mask_props, attn_biases = self.side_adapter_network(
             imgs, clip_feature, deep_supervision_idxs)
 
-        # mask recognition with attention bias
+
         mask_embeds = [
             self.rec_with_attnbias(att_bias, clip_feature[-1])
             for att_bias in attn_biases
         ]
-        # Obtain class prediction of masks by comparing the similarity
-        # between the image token and the text embedding of class names.
+
+
         mask_logits = [
             torch.einsum('bqc,nc->bqn', mask_embed, class_embeds)
             for mask_embed in mask_embeds
@@ -559,21 +474,8 @@ class SideAdapterCLIPHead(BaseDecodeHead):
 
     def predict(self, inputs: Tuple[Tensor], batch_img_metas: List[dict],
                 test_cfg: ConfigType) -> Tensor:
-        """Forward function for prediction.
 
-        Args:
-            inputs (Tuple[Tensor]): Images, visual features from image encoder
-            and class embedding from text encoder.
-            batch_img_metas (dict): List Image info where each dict may also
-                contain: 'img_shape', 'scale_factor', 'flip', 'img_path',
-                'ori_shape', and 'pad_shape'.
-                For details on the values of these keys see
-                `mmseg/datasets/pipelines/formatting.py:PackSegInputs`.
-            test_cfg (dict): The testing config.
 
-        Returns:
-            Tensor: Outputs segmentation logits map.
-        """
         mask_props, mask_logits = self.forward(inputs, [])
 
         return self.predict_by_feat([mask_props[-1], mask_logits[-1]],
@@ -581,19 +483,18 @@ class SideAdapterCLIPHead(BaseDecodeHead):
 
     def predict_by_feat(self, seg_logits: List[Tensor],
                         batch_img_metas: List[dict]) -> Tensor:
-        """1. Transform a batch of mask proposals to the input shape.
-           2. Generate segmentation map with mask proposals and class logits.
-        """
+
+
         mask_pred = seg_logits[0]
         cls_score = seg_logits[1]
         if isinstance(batch_img_metas[0]['img_shape'], torch.Size):
-            # slide inference
+
             size = batch_img_metas[0]['img_shape']
         elif 'pad_shape' in batch_img_metas[0]:
             size = batch_img_metas[0]['pad_shape'][:2]
         else:
             size = batch_img_metas[0]['img_shape']
-        # upsample mask
+
         mask_pred = F.interpolate(
             mask_pred, size=size, mode='bilinear', align_corners=False)
 
@@ -604,29 +505,16 @@ class SideAdapterCLIPHead(BaseDecodeHead):
 
     def loss(self, x: Tuple[Tensor], batch_data_samples: SampleList,
              train_cfg: ConfigType) -> dict:
-        """Perform forward propagation and loss calculation of the decoder head
-        on the features of the upstream network.
 
-        Args:
-            x (tuple[Tensor]): Multi-level features from the upstream
-                network, each is a 4D-tensor.
-            batch_data_samples (List[:obj:`SegDataSample`]): The Data
-                Samples. It usually includes information such as
-                `gt_sem_seg`.
-            train_cfg (ConfigType): Training config.
 
-        Returns:
-            dict[str, Tensor]: a dictionary of loss components.
-        """
-        # batch SegDataSample to InstanceDataSample
         batch_gt_instances = seg_data_to_instance_data(self.ignore_index,
                                                        batch_data_samples)
 
-        # forward
+
         all_mask_props, all_mask_logits = self.forward(
             x, self.deep_supervision_idxs)
 
-        # loss
+
         losses = self.loss_by_feat(all_mask_logits, all_mask_props,
                                    batch_gt_instances)
 
@@ -635,21 +523,8 @@ class SideAdapterCLIPHead(BaseDecodeHead):
     def loss_by_feat(
             self, all_cls_scores: Tensor, all_mask_preds: Tensor,
             batch_gt_instances: List[InstanceData]) -> Dict[str, Tensor]:
-        """Loss function.
 
-        Args:
-            all_cls_scores (Tensor): Classification scores for all decoder
-                layers with shape (num_decoder, batch_size, num_queries,
-                cls_out_channels). Note `cls_out_channels` should includes
-                background.
-            all_mask_preds (Tensor): Mask scores for all decoder layers with
-                shape (num_decoder, batch_size, num_queries, h, w).
-            batch_gt_instances (list[obj:`InstanceData`]): each contains
-                ``labels`` and ``masks``.
 
-        Returns:
-            dict[str, Tensor]: A dictionary of loss components.
-        """
         num_dec_layers = len(all_cls_scores)
         batch_gt_instances_list = [
             batch_gt_instances for _ in range(num_dec_layers)
@@ -659,7 +534,7 @@ class SideAdapterCLIPHead(BaseDecodeHead):
         for i in range(num_dec_layers):
             cls_scores = all_cls_scores[i]
             mask_preds = all_mask_preds[i]
-            # matching N mask predictions to K category labels
+
             (labels, mask_targets, mask_weights,
              avg_factor) = self.match_masks.get_targets(
                  cls_scores, mask_preds, batch_gt_instances_list[i])
@@ -670,8 +545,7 @@ class SideAdapterCLIPHead(BaseDecodeHead):
             all_reduce(num_total_masks, op='mean')
             num_total_masks = max(num_total_masks, 1)
 
-            # extract positive ones
-            # shape (batch_size, num_queries, h, w) -> (num_total_gts, h, w)
+
             mask_preds = mask_preds[mask_weights > 0]
 
             if mask_targets.shape[0] != 0:
@@ -681,12 +555,12 @@ class SideAdapterCLIPHead(BaseDecodeHead):
                         self.train_cfg.num_points,
                         self.train_cfg.oversample_ratio,
                         self.train_cfg.importance_sample_ratio)
-                    # shape (num_total_gts, h, w)
-                    # -> (num_total_gts, num_points)
+
+
                     mask_point_targets = point_sample(
                         mask_targets.unsqueeze(1).float(),
                         points_coords).squeeze(1)
-                # shape (num_queries, h, w) -> (num_queries, num_points)
+
                 mask_point_preds = point_sample(
                     mask_preds.unsqueeze(1), points_coords).squeeze(1)
 
@@ -727,9 +601,9 @@ class SideAdapterCLIPHead(BaseDecodeHead):
             losses.append(loss)
 
         loss_dict = dict()
-        # loss from the last decoder layer
+
         loss_dict.update(losses[-1])
-        # loss from other decoder layers
+
         for i, loss in enumerate(losses[:-1]):
             for k, v in loss.items():
                 loss_dict[f'd{self.deep_supervision_idxs[i]}.{k}'] = v

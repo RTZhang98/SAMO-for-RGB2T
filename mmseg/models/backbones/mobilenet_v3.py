@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import warnings
 
 from mmcv.cnn import ConvModule
@@ -13,62 +12,36 @@ from ..utils import InvertedResidualV3 as InvertedResidual
 
 @MODELS.register_module()
 class MobileNetV3(BaseModule):
-    """MobileNetV3 backbone.
 
-    This backbone is the improved implementation of `Searching for MobileNetV3
-    <https://ieeexplore.ieee.org/document/9008835>`_.
 
-    Args:
-        arch (str): Architecture of mobilnetv3, from {'small', 'large'}.
-            Default: 'small'.
-        conv_cfg (dict): Config dict for convolution layer.
-            Default: None, which means using conv2d.
-        norm_cfg (dict): Config dict for normalization layer.
-            Default: dict(type='BN').
-        out_indices (tuple[int]): Output from which layer.
-            Default: (0, 1, 12).
-        frozen_stages (int): Stages to be frozen (all param fixed).
-            Default: -1, which means not freezing any parameters.
-        norm_eval (bool): Whether to set norm layers to eval mode, namely,
-            freeze running stats (mean and var). Note: Effect on Batch Norm
-            and its variants only. Default: False.
-        with_cp (bool): Use checkpoint or not. Using checkpoint will save
-            some memory while slowing down the training speed.
-            Default: False.
-        pretrained (str, optional): model pretrained path. Default: None
-        init_cfg (dict or list[dict], optional): Initialization config dict.
-            Default: None
-    """
-    # Parameters to build each block:
-    #     [kernel size, mid channels, out channels, with_se, act type, stride]
     arch_settings = {
-        'small': [[3, 16, 16, True, 'ReLU', 2],  # block0 layer1 os=4
-                  [3, 72, 24, False, 'ReLU', 2],  # block1 layer2 os=8
+        'small': [[3, 16, 16, True, 'ReLU', 2],
+                  [3, 72, 24, False, 'ReLU', 2],
                   [3, 88, 24, False, 'ReLU', 1],
-                  [5, 96, 40, True, 'HSwish', 2],  # block2 layer4 os=16
+                  [5, 96, 40, True, 'HSwish', 2],
                   [5, 240, 40, True, 'HSwish', 1],
                   [5, 240, 40, True, 'HSwish', 1],
-                  [5, 120, 48, True, 'HSwish', 1],  # block3 layer7 os=16
+                  [5, 120, 48, True, 'HSwish', 1],
                   [5, 144, 48, True, 'HSwish', 1],
-                  [5, 288, 96, True, 'HSwish', 2],  # block4 layer9 os=32
+                  [5, 288, 96, True, 'HSwish', 2],
                   [5, 576, 96, True, 'HSwish', 1],
                   [5, 576, 96, True, 'HSwish', 1]],
-        'large': [[3, 16, 16, False, 'ReLU', 1],  # block0 layer1 os=2
-                  [3, 64, 24, False, 'ReLU', 2],  # block1 layer2 os=4
+        'large': [[3, 16, 16, False, 'ReLU', 1],
+                  [3, 64, 24, False, 'ReLU', 2],
                   [3, 72, 24, False, 'ReLU', 1],
-                  [5, 72, 40, True, 'ReLU', 2],  # block2 layer4 os=8
+                  [5, 72, 40, True, 'ReLU', 2],
                   [5, 120, 40, True, 'ReLU', 1],
                   [5, 120, 40, True, 'ReLU', 1],
-                  [3, 240, 80, False, 'HSwish', 2],  # block3 layer7 os=16
+                  [3, 240, 80, False, 'HSwish', 2],
                   [3, 200, 80, False, 'HSwish', 1],
                   [3, 184, 80, False, 'HSwish', 1],
                   [3, 184, 80, False, 'HSwish', 1],
-                  [3, 480, 112, True, 'HSwish', 1],  # block4 layer11 os=16
+                  [3, 480, 112, True, 'HSwish', 1],
                   [3, 672, 112, True, 'HSwish', 1],
-                  [5, 672, 160, True, 'HSwish', 2],  # block5 layer13 os=32
+                  [5, 672, 160, True, 'HSwish', 2],
                   [5, 960, 160, True, 'HSwish', 1],
                   [5, 960, 160, True, 'HSwish', 1]]
-    }  # yapf: disable
+    }
 
     def __init__(self,
                  arch='small',
@@ -129,7 +102,7 @@ class MobileNetV3(BaseModule):
     def _make_layer(self):
         layers = []
 
-        # build the first layer (layer0)
+
         in_channels = 16
         layer = ConvModule(
             in_channels=3,
@@ -179,9 +152,7 @@ class MobileNetV3(BaseModule):
             self.add_module(layer_name, layer)
             layers.append(layer_name)
 
-        # build the last layer
-        # block5 layer12 os=32 for small model
-        # block6 layer16 os=32 for large model
+
         layer = ConvModule(
             in_channels=in_channels,
             out_channels=576 if self.arch == 'small' else 960,
@@ -196,7 +167,7 @@ class MobileNetV3(BaseModule):
         self.add_module(layer_name, layer)
         layers.append(layer_name)
 
-        # next, convert backbone MobileNetV3 to a semantic segmentation version
+
         if self.arch == 'small':
             self.layer4.depthwise_conv.conv.stride = (1, 1)
             self.layer9.depthwise_conv.conv.stride = (1, 1)
@@ -215,7 +186,7 @@ class MobileNetV3(BaseModule):
                     pad = 4
 
                 if not isinstance(modified_module, Conv2dAdaptivePadding):
-                    # Adjust padding
+
                     pad *= (modified_module.kernel_size[0] - 1) // 2
                     modified_module.padding = (pad, pad)
         else:
@@ -236,7 +207,7 @@ class MobileNetV3(BaseModule):
                     pad = 4
 
                 if not isinstance(modified_module, Conv2dAdaptivePadding):
-                    # Adjust padding
+
                     pad *= (modified_module.kernel_size[0] - 1) // 2
                     modified_module.padding = (pad, pad)
 

@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import torch
 import torch.nn as nn
 from mmcv.cnn import ConvModule
@@ -9,18 +8,7 @@ from ..utils import resize
 
 
 class SpatialPath(BaseModule):
-    """Spatial Path to preserve the spatial size of the original input image
-    and encode affluent spatial information.
 
-    Args:
-        in_channels(int): The number of channels of input
-            image. Default: 3.
-        num_channels (Tuple[int]): The number of channels of
-            each layers in Spatial Path.
-            Default: (64, 64, 64, 128).
-    Returns:
-        x (torch.Tensor): Feature map for Feature Fusion Module.
-    """
 
     def __init__(self,
                  in_channels=3,
@@ -82,14 +70,7 @@ class SpatialPath(BaseModule):
 
 
 class AttentionRefinementModule(BaseModule):
-    """Attention Refinement Module (ARM) to refine the features of each stage.
 
-    Args:
-        in_channels (int): The number of input channels.
-        out_channels (int): The number of output channels.
-    Returns:
-        x_out (torch.Tensor): Feature map of Attention Refinement Module.
-    """
 
     def __init__(self,
                  in_channels,
@@ -127,22 +108,7 @@ class AttentionRefinementModule(BaseModule):
 
 
 class ContextPath(BaseModule):
-    """Context Path to provide sufficient receptive field.
 
-    Args:
-        backbone_cfg:(dict): Config of backbone of
-            Context Path.
-        context_channels (Tuple[int]): The number of channel numbers
-            of various modules in Context Path.
-            Default: (128, 256, 512).
-        align_corners (bool, optional): The align_corners argument of
-            resize operation. Default: False.
-    Returns:
-        x_16_up, x_32_up (torch.Tensor, torch.Tensor): Two feature maps
-            undergoing upsampling from 1/16 and 1/32 downsampling
-            feature maps. These two feature maps are used for Feature
-            Fusion Module and Auxiliary Head.
-    """
 
     def __init__(self,
                  backbone_cfg,
@@ -211,15 +177,7 @@ class ContextPath(BaseModule):
 
 
 class FeatureFusionModule(BaseModule):
-    """Feature Fusion Module to fuse low level output feature of Spatial Path
-    and high level output feature of Context Path.
 
-    Args:
-        in_channels (int): The number of input channels.
-        out_channels (int): The number of output channels.
-    Returns:
-        x_out (torch.Tensor): Feature map of Feature Fusion Module.
-    """
 
     def __init__(self,
                  in_channels,
@@ -255,7 +213,7 @@ class FeatureFusionModule(BaseModule):
         x_concat = torch.cat([x_sp, x_cp], dim=1)
         x_fuse = self.conv1(x_concat)
         x_atten = self.gap(x_fuse)
-        # Note: No BN and more 1x1 conv in paper.
+
         x_atten = self.conv_atten(x_atten)
         x_atten = x_fuse * x_atten
         x_out = x_atten + x_fuse
@@ -264,32 +222,7 @@ class FeatureFusionModule(BaseModule):
 
 @MODELS.register_module()
 class BiSeNetV1(BaseModule):
-    """BiSeNetV1 backbone.
 
-    This backbone is the implementation of `BiSeNet: Bilateral
-    Segmentation Network for Real-time Semantic
-    Segmentation <https://arxiv.org/abs/1808.00897>`_.
-
-    Args:
-        backbone_cfg:(dict): Config of backbone of
-            Context Path.
-        in_channels (int): The number of channels of input
-            image. Default: 3.
-        spatial_channels (Tuple[int]): Size of channel numbers of
-            various layers in Spatial Path.
-            Default: (64, 64, 64, 128).
-        context_channels (Tuple[int]): Size of channel numbers of
-            various modules in Context Path.
-            Default: (128, 256, 512).
-        out_indices (Tuple[int] | int, optional): Output from which stages.
-            Default: (0, 1, 2).
-        align_corners (bool, optional): The align_corners argument of
-            resize operation in Bilateral Guided Aggregation Layer.
-            Default: False.
-        out_channels(int): The number of channels of output.
-            It must be the same with `in_channels` of decode_head.
-            Default: 256.
-    """
 
     def __init__(self,
                  backbone_cfg,
@@ -322,7 +255,7 @@ class BiSeNetV1(BaseModule):
         self.act_cfg = act_cfg
 
     def forward(self, x):
-        # stole refactoring code from Coin Cheung, thanks
+
         x_context8, x_context16 = self.context_path(x)
         x_spatial = self.spatial_path(x)
         x_fuse = self.ffm(x_spatial, x_context8)

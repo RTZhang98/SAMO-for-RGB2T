@@ -1,17 +1,10 @@
-# Copyright (c) OpenMMLab. All rights reserved.
-
 from mmseg.registry import DATASETS
 from .basesegdataset import BaseCDDataset
 
 
 @DATASETS.register_module()
 class LEVIRCDDataset(BaseCDDataset):
-    """ISPRS dataset.
 
-    In segmentation map annotation for ISPRS, 0 is to ignore index.
-    ``reduce_zero_label`` should be set to True. The ``img_suffix`` and
-    ``seg_map_suffix`` are both fixed to '.png'.
-    """
 
     METAINFO = dict(
         classes=('background', 'changed'),

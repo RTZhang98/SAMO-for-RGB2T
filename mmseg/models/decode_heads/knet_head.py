@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 from typing import List
 
 import torch
@@ -17,25 +16,7 @@ from mmseg.utils import SampleList
 
 @MODELS.register_module()
 class KernelUpdator(nn.Module):
-    """Dynamic Kernel Updator in Kernel Update Head.
 
-    Args:
-        in_channels (int): The number of channels of input feature map.
-            Default: 256.
-        feat_channels (int): The number of middle-stage channels in
-            the kernel updator. Default: 64.
-        out_channels (int): The number of output channels.
-        gate_sigmoid (bool): Whether use sigmoid function in gate
-            mechanism. Default: True.
-        gate_norm_act (bool): Whether add normalization and activation
-            layer in gate mechanism. Default: False.
-        activate_out: Whether add activation after gate mechanism.
-            Default: False.
-        norm_cfg (dict | None): Config of norm layers.
-            Default: dict(type='LN').
-        act_cfg (dict): Config of activation layers.
-            Default: dict(type='ReLU').
-    """
 
     def __init__(
             self,
@@ -82,38 +63,25 @@ class KernelUpdator(nn.Module):
         self.fc_norm = build_norm_layer(norm_cfg, self.out_channels)[1]
 
     def forward(self, update_feature, input_feature):
-        """Forward function of KernelUpdator.
 
-        Args:
-            update_feature (torch.Tensor): Feature map assembled from
-                each group. It would be reshaped with last dimension
-                shape: `self.in_channels`.
-            input_feature (torch.Tensor): Intermediate feature
-                with shape: (N, num_classes, conv_kernel_size**2, channels).
-        Returns:
-            Tensor: The output tensor of shape (N*C1/C2, K*K, C2), where N is
-            the number of classes, C1 and C2 are the feature map channels of
-            KernelUpdateHead and KernelUpdator, respectively.
-        """
 
         update_feature = update_feature.reshape(-1, self.in_channels)
         num_proposals = update_feature.size(0)
-        # dynamic_layer works for
-        # phi_1 and psi_3 in Eq.(4) and (5) of K-Net paper
+
+
         parameters = self.dynamic_layer(update_feature)
         param_in = parameters[:, :self.num_params_in].view(
             -1, self.feat_channels)
         param_out = parameters[:, -self.num_params_out:].view(
             -1, self.feat_channels)
 
-        # input_layer works for
-        # phi_2 and psi_4 in Eq.(4) and (5) of K-Net paper
+
         input_feats = self.input_layer(
             input_feature.reshape(num_proposals, -1, self.feat_channels))
         input_in = input_feats[..., :self.num_params_in]
         input_out = input_feats[..., -self.num_params_out:]
 
-        # `gate_feats` is F^G in K-Net paper
+
         gate_feats = input_in * param_in.unsqueeze(-2)
         if self.gate_norm_act:
             gate_feats = self.activation(self.gate_norm(gate_feats))
@@ -130,8 +98,7 @@ class KernelUpdator(nn.Module):
             param_out = self.activation(param_out)
             input_out = self.activation(input_out)
 
-        # Gate mechanism. Eq.(5) in original paper.
-        # param_out has shape (batch_size, feat_channels, out_channels)
+
         features = update_gate * param_out.unsqueeze(
             -2) + input_gate * input_out
 
@@ -144,50 +111,7 @@ class KernelUpdator(nn.Module):
 
 @MODELS.register_module()
 class KernelUpdateHead(nn.Module):
-    """Kernel Update Head in K-Net.
 
-    Args:
-        num_classes (int): Number of classes. Default: 150.
-        num_ffn_fcs (int): The number of fully-connected layers in
-            FFNs. Default: 2.
-        num_heads (int): The number of parallel attention heads.
-            Default: 8.
-        num_mask_fcs (int): The number of fully connected layers for
-            mask prediction. Default: 3.
-        feedforward_channels (int): The hidden dimension of FFNs.
-            Defaults: 2048.
-        in_channels (int): The number of channels of input feature map.
-            Default: 256.
-        out_channels (int): The number of output channels.
-            Default: 256.
-        dropout (float): The Probability of an element to be
-            zeroed in MultiheadAttention and FFN. Default 0.0.
-        act_cfg (dict): Config of activation layers.
-            Default: dict(type='ReLU').
-        ffn_act_cfg (dict): Config of activation layers in FFN.
-            Default: dict(type='ReLU').
-        conv_kernel_size (int): The kernel size of convolution in
-            Kernel Update Head for dynamic kernel updation.
-            Default: 1.
-        feat_transform_cfg (dict | None): Config of feature transform.
-            Default: None.
-        kernel_init (bool): Whether initiate mask kernel in mask head.
-            Default: False.
-        with_ffn (bool): Whether add FFN in kernel update head.
-            Default: True.
-        feat_gather_stride (int): Stride of convolution in feature transform.
-            Default: 1.
-        mask_transform_stride (int): Stride of mask transform.
-            Default: 1.
-        kernel_updator_cfg (dict): Config of kernel updator.
-            Default: dict(
-                     type='DynamicConv',
-                     in_channels=256,
-                     feat_channels=64,
-                     out_channels=256,
-                     act_cfg=dict(type='ReLU', inplace=True),
-                     norm_cfg=dict(type='LN')).
-    """
 
     def __init__(self,
                  num_classes=150,
@@ -265,14 +189,14 @@ class KernelUpdateHead(nn.Module):
         self.fc_mask = nn.Linear(in_channels, out_channels)
 
     def init_weights(self):
-        """Use xavier initialization for all weight parameter and set
-        classification head bias as a specific value when use focal loss."""
+
+
         for p in self.parameters():
             if p.dim() > 1:
                 nn.init.xavier_uniform_(p)
             else:
-                # adopt the default initialization for
-                # the weight and bias of the layer norm
+
+
                 pass
         if self.kernel_init:
             print_log(
@@ -280,22 +204,8 @@ class KernelUpdateHead(nn.Module):
             nn.init.normal_(self.fc_mask.weight, mean=0, std=0.01)
 
     def forward(self, x, proposal_feat, mask_preds, mask_shape=None):
-        """Forward function of Dynamic Instance Interactive Head.
 
-        Args:
-            x (Tensor): Feature map from FPN with shape
-                (batch_size, feature_dimensions, H , W).
-            proposal_feat (Tensor): Intermediate feature get from
-                diihead in last stage, has shape
-                (batch_size, num_proposals, feature_dimensions)
-            mask_preds (Tensor): mask prediction from the former stage in shape
-                (batch_size, num_proposals, H, W).
 
-        Returns:
-            Tuple: The first tensor is predicted mask with shape
-            (N, num_classes, H, W), the second tensor is dynamic kernel
-            with shape (N, num_classes, channels, K, K).
-        """
         N, num_proposals = proposal_feat.shape[:2]
         if self.feat_transform is not None:
             x = self.feat_transform(x)
@@ -311,26 +221,25 @@ class KernelUpdateHead(nn.Module):
 
         sigmoid_masks = gather_mask.softmax(dim=1)
 
-        # Group Feature Assembling. Eq.(3) in original paper.
-        # einsum is faster than bmm by 30%
+
         x_feat = torch.einsum('bnhw,bchw->bnc', sigmoid_masks, x)
 
-        # obj_feat in shape [B, N, C, K, K] -> [B, N, C, K*K] -> [B, N, K*K, C]
+
         proposal_feat = proposal_feat.reshape(N, num_proposals,
                                               self.in_channels,
                                               -1).permute(0, 1, 3, 2)
         obj_feat = self.kernel_update_conv(x_feat, proposal_feat)
 
-        # [B, N, K*K, C] -> [B, N, K*K*C] -> [N, B, K*K*C]
+
         obj_feat = obj_feat.reshape(N, num_proposals, -1).permute(1, 0, 2)
         obj_feat = self.attention_norm(self.attention(obj_feat))
-        # [N, B, K*K*C] -> [B, N, K*K*C]
+
         obj_feat = obj_feat.permute(1, 0, 2)
 
-        # obj_feat in shape [B, N, K*K*C] -> [B, N, K*K, C]
+
         obj_feat = obj_feat.reshape(N, num_proposals, -1, self.in_channels)
 
-        # FFN
+
         if self.with_ffn:
             obj_feat = self.ffn_norm(self.ffn(obj_feat))
 
@@ -339,7 +248,7 @@ class KernelUpdateHead(nn.Module):
         for reg_layer in self.mask_fcs:
             mask_feat = reg_layer(mask_feat)
 
-        # [B, N, K*K, C] -> [B, N, C, K*K]
+
         mask_feat = self.fc_mask(mask_feat).permute(0, 1, 3, 2)
 
         if (self.mask_transform_stride == 2 and self.feat_gather_stride == 1):
@@ -348,22 +257,12 @@ class KernelUpdateHead(nn.Module):
             H, W = mask_x.shape[-2:]
         else:
             mask_x = x
-        # group conv is 5x faster than unfold and uses about 1/5 memory
-        # Group conv vs. unfold vs. concat batch, 2.9ms :13.5ms :3.8ms
-        # Group conv vs. unfold vs. concat batch, 278 : 1420 : 369
-        # but in real training group conv is slower than concat batch
-        # so we keep using concat batch.
-        # fold_x = F.unfold(
-        #     mask_x,
-        #     self.conv_kernel_size,
-        #     padding=int(self.conv_kernel_size // 2))
-        # mask_feat = mask_feat.reshape(N, num_proposals, -1)
-        # new_mask_preds = torch.einsum('bnc,bcl->bnl', mask_feat, fold_x)
-        # [B, N, C, K*K] -> [B*N, C, K, K]
+
+
         mask_feat = mask_feat.reshape(N, num_proposals, C,
                                       self.conv_kernel_size,
                                       self.conv_kernel_size)
-        # [B, C, H, W] -> [1, B*C, H, W]
+
         new_mask_preds = []
         for i in range(N):
             new_mask_preds.append(
@@ -395,27 +294,12 @@ class KernelUpdateHead(nn.Module):
 
 @MODELS.register_module()
 class IterativeDecodeHead(BaseDecodeHead):
-    """K-Net: Towards Unified Image Segmentation.
 
-    This head is the implementation of
-    `K-Net:　<https://arxiv.org/abs/2106.14855>`_.
-
-    Args:
-        num_stages (int): The number of stages (kernel update heads)
-            in IterativeDecodeHead. Default: 3.
-        kernel_generate_head:(dict): Config of kernel generate head which
-            generate mask predictions, dynamic kernels and class predictions
-            for next kernel update heads.
-        kernel_update_head (dict): Config of kernel update head which refine
-            dynamic kernels and class predictions iteratively.
-
-    """
 
     def __init__(self, num_stages, kernel_generate_head, kernel_update_head,
                  **kwargs):
-        # ``IterativeDecodeHead`` would skip initialization of
-        # ``BaseDecodeHead`` which would be called when building
-        # ``self.kernel_generate_head``.
+
+
         super(BaseDecodeHead, self).__init__(**kwargs)
         assert num_stages == len(kernel_update_head)
         self.num_stages = num_stages
@@ -431,7 +315,7 @@ class IterativeDecodeHead(BaseDecodeHead):
             self.kernel_update_head.append(MODELS.build(head_cfg))
 
     def forward(self, inputs):
-        """Forward function."""
+
         feats = self.kernel_generate_head._forward_feature(inputs)
         sem_seg = self.kernel_generate_head.cls_seg(feats)
         seg_kernels = self.kernel_generate_head.conv_seg.weight.clone()
@@ -446,7 +330,7 @@ class IterativeDecodeHead(BaseDecodeHead):
             stage_segs.append(sem_seg)
         if self.training:
             return stage_segs
-        # only return the prediction of the last stage during testing
+
         return stage_segs[-1]
 
     def loss_by_feat(self, seg_logits: List[Tensor],

@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import math
 
 import torch
@@ -14,12 +13,7 @@ from .resnet import ResNetV1d
 
 
 class RSoftmax(nn.Module):
-    """Radix Softmax module in ``SplitAttentionConv2d``.
 
-    Args:
-        radix (int): Radix of input.
-        groups (int): Groups of input.
-    """
 
     def __init__(self, radix, groups):
         super().__init__()
@@ -38,23 +32,7 @@ class RSoftmax(nn.Module):
 
 
 class SplitAttentionConv2d(nn.Module):
-    """Split-Attention Conv2d in ResNeSt.
 
-    Args:
-        in_channels (int): Same as nn.Conv2d.
-        out_channels (int): Same as nn.Conv2d.
-        kernel_size (int | tuple[int]): Same as nn.Conv2d.
-        stride (int | tuple[int]): Same as nn.Conv2d.
-        padding (int | tuple[int]): Same as nn.Conv2d.
-        dilation (int | tuple[int]): Same as nn.Conv2d.
-        groups (int): Same as nn.Conv2d.
-        radix (int): Radix of SpltAtConv2d. Default: 2
-        reduction_factor (int): Reduction factor of inter_channels. Default: 4.
-        conv_cfg (dict): Config dict for convolution layer. Default: None,
-            which means using conv2d.
-        norm_cfg (dict): Config dict for normalization layer. Default: None.
-        dcn (dict): Config dict for DCN. Default: None.
-    """
 
     def __init__(self,
                  in_channels,
@@ -107,12 +85,12 @@ class SplitAttentionConv2d(nn.Module):
 
     @property
     def norm0(self):
-        """nn.Module: the normalization layer named "norm0" """
+
         return getattr(self, self.norm0_name)
 
     @property
     def norm1(self):
-        """nn.Module: the normalization layer named "norm1" """
+
         return getattr(self, self.norm1_name)
 
     def forward(self, x):
@@ -145,22 +123,8 @@ class SplitAttentionConv2d(nn.Module):
 
 
 class Bottleneck(_Bottleneck):
-    """Bottleneck block for ResNeSt.
 
-    Args:
-        inplane (int): Input planes of this block.
-        planes (int): Middle planes of this block.
-        groups (int): Groups of conv2.
-        width_per_group (int): Width per group of conv2. 64x4d indicates
-            ``groups=64, width_per_group=4`` and 32x8d indicates
-            ``groups=32, width_per_group=8``.
-        radix (int): Radix of SpltAtConv2d. Default: 2
-        reduction_factor (int): Reduction factor of inter_channels in
-            SplitAttentionConv2d. Default: 4.
-        avg_down_stride (bool): Whether to use average pool for stride in
-            Bottleneck. Default: True.
-        kwargs (dict): Key word arguments for base class.
-    """
+
     expansion = 4
 
     def __init__(self,
@@ -173,7 +137,7 @@ class Bottleneck(_Bottleneck):
                  reduction_factor=4,
                  avg_down_stride=True,
                  **kwargs):
-        """Bottleneck block for ResNeSt."""
+
         super().__init__(inplanes, planes, **kwargs)
 
         if groups == 1:
@@ -269,21 +233,7 @@ class Bottleneck(_Bottleneck):
 
 @MODELS.register_module()
 class ResNeSt(ResNetV1d):
-    """ResNeSt backbone.
 
-    This backbone is the implementation of `ResNeSt:
-    Split-Attention Networks <https://arxiv.org/abs/2004.08955>`_.
-
-    Args:
-        groups (int): Number of groups of Bottleneck. Default: 1
-        base_width (int): Base width of Bottleneck. Default: 4
-        radix (int): Radix of SpltAtConv2d. Default: 2
-        reduction_factor (int): Reduction factor of inter_channels in
-            SplitAttentionConv2d. Default: 4.
-        avg_down_stride (bool): Whether to use average pool for stride in
-            Bottleneck. Default: True.
-        kwargs (dict): Keyword arguments for ResNet.
-    """
 
     arch_settings = {
         50: (Bottleneck, (3, 4, 6, 3)),
@@ -307,7 +257,7 @@ class ResNeSt(ResNetV1d):
         super().__init__(**kwargs)
 
     def make_res_layer(self, **kwargs):
-        """Pack all blocks in a stage into a ``ResLayer``."""
+
         return ResLayer(
             groups=self.groups,
             base_width=self.base_width,

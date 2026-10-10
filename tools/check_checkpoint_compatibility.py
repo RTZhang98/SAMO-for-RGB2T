@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 os.chdir(ROOT)
 sys.path.insert(0, str(ROOT))
 
-import rein  # noqa: E402,F401
+import rein
 
 RELEASES = {
     "citys": "citys_samo_plus_68.15.pth",
@@ -29,7 +29,7 @@ TOKEN_KEYS = (
 )
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser()
     parser.add_argument("--checkpoint-dir", type=Path, default=ROOT / "checkpoints")
     return parser.parse_args()
 

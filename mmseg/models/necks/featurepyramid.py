@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import torch.nn as nn
 from mmcv.cnn import build_norm_layer
 
@@ -7,17 +6,7 @@ from mmseg.registry import MODELS
 
 @MODELS.register_module()
 class Feature2Pyramid(nn.Module):
-    """Feature2Pyramid.
 
-    A neck structure connect ViT backbone and decoder_heads.
-
-    Args:
-        embed_dims (int): Embedding dimension.
-        rescales (list[float]): Different sampling multiples were
-            used to obtain pyramid features. Default: [4, 2, 1, 0.5].
-        norm_cfg (dict): Config dict for normalization layer.
-            Default: dict(type='SyncBN', requires_grad=True).
-    """
 
     def __init__(self,
                  embed_dim,

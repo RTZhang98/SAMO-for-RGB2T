@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -9,18 +8,7 @@ from .builder import PIXEL_SAMPLERS
 
 @PIXEL_SAMPLERS.register_module()
 class OHEMPixelSampler(BasePixelSampler):
-    """Online Hard Example Mining Sampler for segmentation.
 
-    Args:
-        context (nn.Module): The context of sampler, subclass of
-            :obj:`BaseDecodeHead`.
-        thresh (float, optional): The threshold for hard example selection.
-            Below which, are prediction with low confidence. If not
-            specified, the hard examples will be pixels of top ``min_kept``
-            loss. Default: None.
-        min_kept (int, optional): The minimum number of predictions to keep.
-            Default: 100000.
-    """
 
     def __init__(self, context, thresh=None, min_kept=100000):
         super().__init__()
@@ -30,15 +18,8 @@ class OHEMPixelSampler(BasePixelSampler):
         self.min_kept = min_kept
 
     def sample(self, seg_logit, seg_label):
-        """Sample pixels that have high loss or with low prediction confidence.
 
-        Args:
-            seg_logit (torch.Tensor): segmentation logits, shape (N, C, H, W)
-            seg_label (torch.Tensor): segmentation label, shape (N, 1, H, W)
 
-        Returns:
-            torch.Tensor: segmentation weight, shape (N, H, W)
-        """
         with torch.no_grad():
             assert seg_logit.shape[2:] == seg_label.shape[2:]
             assert seg_label.shape[1] == 1
@@ -76,7 +57,7 @@ class OHEMPixelSampler(BasePixelSampler):
                         ignore_index=self.context.ignore_index,
                         reduction_override='none')
 
-                # faster than topk according to https://github.com/pytorch/pytorch/issues/22812  # noqa
+
                 _, sort_indices = losses[valid_mask].sort(descending=True)
                 valid_seg_weight[sort_indices[:batch_kept]] = 1.
 

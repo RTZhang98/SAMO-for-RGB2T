@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import torch
 import torch.nn as nn
 from mmcv.cnn import ConvModule, DepthwiseSeparableConvModule
@@ -9,8 +8,7 @@ from .aspp_head import ASPPHead, ASPPModule
 
 
 class DepthwiseSeparableASPPModule(ASPPModule):
-    """Atrous Spatial Pyramid Pooling (ASPP) Module with depthwise separable
-    conv."""
+
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -28,17 +26,7 @@ class DepthwiseSeparableASPPModule(ASPPModule):
 
 @MODELS.register_module()
 class DepthwiseSeparableASPPHead(ASPPHead):
-    """Encoder-Decoder with Atrous Separable Convolution for Semantic Image
-    Segmentation.
 
-    This head is the implementation of `DeepLabV3+
-    <https://arxiv.org/abs/1802.02611>`_.
-
-    Args:
-        c1_in_channels (int): The input channels of c1 decoder. If is 0,
-            the no decoder will be used.
-        c1_channels (int): The intermediate channels of c1 decoder.
-    """
 
     def __init__(self, c1_in_channels, c1_channels, **kwargs):
         super().__init__(**kwargs)
@@ -77,7 +65,7 @@ class DepthwiseSeparableASPPHead(ASPPHead):
                 act_cfg=self.act_cfg))
 
     def forward(self, inputs):
-        """Forward function."""
+
         x = self._transform_inputs(inputs)
         aspp_outs = [
             resize(

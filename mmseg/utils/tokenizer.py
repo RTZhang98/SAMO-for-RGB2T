@@ -1,9 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
-"""CLIP tokenizer.
-
-Copied from https://github.com/openai/CLIP. Originally MIT License, Copyright
-(c) 2021 OpenAI.
-"""
 import gzip
 import html
 import os
@@ -26,16 +20,8 @@ def default_bpe():
 
 @lru_cache()
 def bytes_to_unicode():
-    """Returns list of utf-8 byte and a corresponding list of unicode strings.
 
-    The reversible bpe codes work on unicode strings. This means you need a
-    large # of unicode characters in your vocab if you want to avoid UNKs. When
-    you're at something like a 10B token dataset you end up needing around 5K
-    for decent coverage. This is a significant percentage of your normal, say,
-    32K bpe vocab. To avoid that, we want lookup tables between utf-8 bytes and
-    unicode strings. And avoids mapping to whitespace/control characters the
-    bpe code barfs on.
-    """
+
     bs = list(range(ord('!'),
                     ord('~') + 1)) + list(range(
                         ord('¡'),
@@ -53,11 +39,8 @@ def bytes_to_unicode():
 
 
 def get_pairs(word):
-    """Return set of symbol pairs in a word.
 
-    Word is represented as tuple of symbols (symbols being variable-length
-    strings).
-    """
+
     pairs = set()
     prev_char = word[0]
     for char in word[1:]:
@@ -131,7 +114,7 @@ class SimpleTokenizer:
                     j = word.index(first, i)
                     new_word.extend(word[i:j])
                     i = j
-                except:  # noqa: E722, E261
+                except:
                     new_word.extend(word[i:])
                     break
 
@@ -179,20 +162,8 @@ def decode(output_ids: torch.Tensor):
 
 def tokenize(texts: Union[str, List[str]],
              context_length: int = 77) -> torch.LongTensor:
-    """Returns the tokenized representation of given input string(s)
 
-    Parameters
-    ----------
-    texts : Union[str, List[str]]
-        An input string or a list of input strings to tokenize
-    context_length : int
-        The context length to use; all CLIP models use 77 as the context length
 
-    Returns
-    -------
-    A two-dimensional tensor containing the resulting tokens,
-    shape = [number of input strings, context_length]
-    """
     if isinstance(texts, str):
         texts = [texts]
 
@@ -204,7 +175,7 @@ def tokenize(texts: Union[str, List[str]],
 
     for i, tokens in enumerate(all_tokens):
         if len(tokens) > context_length:
-            tokens = tokens[:context_length]  # Truncate
+            tokens = tokens[:context_length]
             tokens[-1] = eot_token
         result[i, :len(tokens)] = torch.tensor(tokens)
 
@@ -212,7 +183,7 @@ def tokenize(texts: Union[str, List[str]],
 
 
 class HFTokenizer:
-    """HuggingFace tokenizer wrapper."""
+
 
     def __init__(self, tokenizer_name: str):
         from transformers import AutoTokenizer
@@ -224,9 +195,8 @@ class HFTokenizer:
     def __call__(self,
                  texts: Union[str, List[str]],
                  context_length: int = 77) -> torch.Tensor:
-        # same cleaning as for default tokenizer, except lowercasing
-        # adding lower (for case-sensitive tokenizers) will make it
-        # more robust but less sensitive to nuance
+
+
         if isinstance(texts, str):
             texts = [texts]
         texts = [whitespace_clean(basic_clean(text)) for text in texts]

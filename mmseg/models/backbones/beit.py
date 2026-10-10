@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import warnings
 
 import numpy as np
@@ -21,25 +20,7 @@ from .vit import TransformerEncoderLayer as VisionTransformerEncoderLayer
 
 
 class BEiTAttention(BaseModule):
-    """Window based multi-head self-attention (W-MSA) module with relative
-    position bias.
 
-    Args:
-        embed_dims (int): Number of input channels.
-        num_heads (int): Number of attention heads.
-        window_size (tuple[int]): The height and width of the window.
-        bias (bool): The option to add leanable bias for q, k, v. If bias is
-            True, it will add leanable bias. If bias is 'qv_bias', it will only
-            add leanable bias for q, v. If bias is False, it will not add bias
-            for q, k, v. Default to 'qv_bias'.
-        qk_scale (float | None, optional): Override default qk scale of
-            head_dim ** -0.5 if set. Default: None.
-        attn_drop_rate (float): Dropout ratio of attention weight.
-            Default: 0.0
-        proj_drop_rate (float): Dropout ratio of output. Default: 0.
-        init_cfg (dict | None, optional): The Config for initialization.
-            Default: None.
-    """
 
     def __init__(self,
                  embed_dims,
@@ -77,31 +58,30 @@ class BEiTAttention(BaseModule):
 
     def _init_rel_pos_embedding(self):
         Wh, Ww = self.window_size
-        # cls to token & token 2 cls & cls to cls
+
         self.num_relative_distance = (2 * Wh - 1) * (2 * Ww - 1) + 3
-        # relative_position_bias_table shape is (2*Wh-1 * 2*Ww-1 + 3, nH)
+
         self.relative_position_bias_table = nn.Parameter(
             torch.zeros(self.num_relative_distance, self.num_heads))
 
-        # get pair-wise relative position index for
-        # each token inside the window
+
         coords_h = torch.arange(Wh)
         coords_w = torch.arange(Ww)
-        # coords shape is (2, Wh, Ww)
+
         coords = torch.stack(torch.meshgrid([coords_h, coords_w]))
-        # coords_flatten shape is (2, Wh*Ww)
+
         coords_flatten = torch.flatten(coords, 1)
         relative_coords = (
             coords_flatten[:, :, None] - coords_flatten[:, None, :])
-        # relative_coords shape is (Wh*Ww, Wh*Ww, 2)
+
         relative_coords = relative_coords.permute(1, 2, 0).contiguous()
-        # shift to start from 0
+
         relative_coords[:, :, 0] += Wh - 1
         relative_coords[:, :, 1] += Ww - 1
         relative_coords[:, :, 0] *= 2 * Ww - 1
         relative_position_index = torch.zeros(
             size=(Wh * Ww + 1, ) * 2, dtype=relative_coords.dtype)
-        # relative_position_index shape is (Wh*Ww, Wh*Ww)
+
         relative_position_index[1:, 1:] = relative_coords.sum(-1)
         relative_position_index[0, 0:] = self.num_relative_distance - 3
         relative_position_index[0:, 0] = self.num_relative_distance - 2
@@ -114,10 +94,8 @@ class BEiTAttention(BaseModule):
         trunc_normal_(self.relative_position_bias_table, std=0.02)
 
     def forward(self, x):
-        """
-        Args:
-            x (tensor): input features with shape of (num_windows*B, N, C).
-        """
+
+
         B, N, C = x.shape
 
         if self.bias == 'qv_bias':
@@ -138,7 +116,7 @@ class BEiTAttention(BaseModule):
                 self.relative_position_index.view(-1)].view(
                     Wh * Ww + 1, Wh * Ww + 1, -1)
             relative_position_bias = relative_position_bias.permute(
-                2, 0, 1).contiguous()  # nH, Wh*Ww, Wh*Ww
+                2, 0, 1).contiguous()
             attn = attn + relative_position_bias.unsqueeze(0)
         attn = attn.softmax(dim=-1)
         attn = self.attn_drop(attn)
@@ -149,30 +127,7 @@ class BEiTAttention(BaseModule):
 
 
 class BEiTTransformerEncoderLayer(VisionTransformerEncoderLayer):
-    """Implements one encoder layer in Vision Transformer.
 
-    Args:
-        embed_dims (int): The feature dimension.
-        num_heads (int): Parallel attention heads.
-        feedforward_channels (int): The hidden dimension for FFNs.
-        attn_drop_rate (float): The drop out rate for attention layer.
-            Default: 0.0.
-        drop_path_rate (float): Stochastic depth rate. Default 0.0.
-        num_fcs (int): The number of fully-connected layers for FFNs.
-            Default: 2.
-        bias (bool): The option to add leanable bias for q, k, v. If bias is
-            True, it will add leanable bias. If bias is 'qv_bias', it will only
-            add leanable bias for q, v. If bias is False, it will not add bias
-            for q, k, v. Default to 'qv_bias'.
-        act_cfg (dict): The activation config for FFNs.
-            Default: dict(type='GELU').
-        norm_cfg (dict): Config dict for normalization layer.
-            Default: dict(type='LN').
-        window_size (tuple[int], optional): The height and width of the window.
-            Default: None.
-        init_values (float, optional): Initialize the values of BEiTAttention
-            and FFN with learnable scaling. Default: None.
-    """
 
     def __init__(self,
                  embed_dims,
@@ -204,8 +159,7 @@ class BEiTTransformerEncoderLayer(VisionTransformerEncoderLayer):
             attn_cfg=attn_cfg,
             ffn_cfg=ffn_cfg)
 
-        # NOTE: drop path for stochastic depth, we shall see if
-        # this is better than dropout here
+
         dropout_layer = dict(type='DropPath', drop_prob=drop_path_rate)
         self.drop_path = build_dropout(
             dropout_layer) if dropout_layer else nn.Identity()
@@ -225,42 +179,7 @@ class BEiTTransformerEncoderLayer(VisionTransformerEncoderLayer):
 
 @MODELS.register_module()
 class BEiT(BaseModule):
-    """BERT Pre-Training of Image Transformers.
 
-    Args:
-        img_size (int | tuple): Input image size. Default: 224.
-        patch_size (int): The patch size. Default: 16.
-        in_channels (int): Number of input channels. Default: 3.
-        embed_dims (int): Embedding dimension. Default: 768.
-        num_layers (int): Depth of transformer. Default: 12.
-        num_heads (int): Number of attention heads. Default: 12.
-        mlp_ratio (int): Ratio of mlp hidden dim to embedding dim.
-            Default: 4.
-        out_indices (list | tuple | int): Output from which stages.
-            Default: -1.
-        qv_bias (bool): Enable bias for qv if True. Default: True.
-        attn_drop_rate (float): The drop out rate for attention layer.
-            Default 0.0
-        drop_path_rate (float): Stochastic depth rate. Default 0.0.
-        norm_cfg (dict): Config dict for normalization layer.
-            Default: dict(type='LN')
-        act_cfg (dict): The activation config for FFNs.
-            Default: dict(type='GELU').
-        patch_norm (bool): Whether to add a norm in PatchEmbed Block.
-            Default: False.
-        final_norm (bool): Whether to add a additional layer to normalize
-            final feature map. Default: False.
-        num_fcs (int): The number of fully-connected layers for FFNs.
-            Default: 2.
-        norm_eval (bool): Whether to set norm layers to eval mode, namely,
-            freeze running stats (mean and var). Note: Effect on Batch Norm
-            and its variants only. Default: False.
-        pretrained (str, optional): Model pretrained path. Default: None.
-        init_values (float): Initialize the values of BEiTAttention and FFN
-            with learnable scaling.
-        init_cfg (dict or list[dict], optional): Initialization config dict.
-            Default: None.
-    """
 
     def __init__(self,
                  img_size=224,
@@ -343,7 +262,7 @@ class BEiT(BaseModule):
             self.add_module(self.norm1_name, norm1)
 
     def _build_patch_embedding(self):
-        """Build patch embedding layer."""
+
         self.patch_embed = PatchEmbed(
             in_channels=self.in_channels,
             embed_dims=self.embed_dims,
@@ -355,7 +274,7 @@ class BEiT(BaseModule):
             init_cfg=None)
 
     def _build_layers(self):
-        """Build transformer encoding layers."""
+
 
         dpr = [
             x.item()
@@ -383,24 +302,12 @@ class BEiT(BaseModule):
 
     def _geometric_sequence_interpolation(self, src_size, dst_size, sequence,
                                           num):
-        """Get new sequence via geometric sequence interpolation.
 
-        Args:
-            src_size (int): Pos_embedding size in pre-trained model.
-            dst_size (int): Pos_embedding size in the current model.
-            sequence (tensor): The relative position bias of the pretrain
-                model after removing the extra tokens.
-            num (int): Number of attention heads.
-        Returns:
-            new_sequence (tensor): Geometric sequence interpolate the
-                pre-trained relative position bias to the size of
-                the current model.
-        """
 
         def geometric_progression(a, r, n):
             return a * (1.0 - r**n) / (1.0 - r)
 
-        # Here is a binary function.
+
         left, right = 1.01, 1.5
         while right - left > 1e-6:
             q = (left + right) / 2.0
@@ -409,8 +316,8 @@ class BEiT(BaseModule):
                 right = q
             else:
                 left = q
-        # The position of each interpolated point is determined
-        # by the ratio obtained by dichotomy.
+
+
         dis = []
         cur = 1
         for i in range(src_size // 2):
@@ -422,7 +329,7 @@ class BEiT(BaseModule):
         t = dst_size // 2.0
         dx = np.arange(-t, t + 0.1, 1.0)
         dy = np.arange(-t, t + 0.1, 1.0)
-        # Interpolation functions are being executed and called.
+
         new_sequence = []
         for i in range(num):
             z = sequence[:, i].view(src_size, src_size).float().numpy()
@@ -433,18 +340,8 @@ class BEiT(BaseModule):
         return new_sequence
 
     def resize_rel_pos_embed(self, checkpoint):
-        """Resize relative pos_embed weights.
 
-        This function is modified from
-        https://github.com/microsoft/unilm/blob/master/beit/semantic_segmentation/mmcv_custom/checkpoint.py.  # noqa: E501
-        Copyright (c) Microsoft Corporation
-        Licensed under the MIT License
-        Args:
-            checkpoint (dict): Key and value of the pretrain model.
-        Returns:
-            state_dict (dict): Interpolate the relative pos_embed weights
-                in the pre-train model to the current model size.
-        """
+
         if 'state_dict' in checkpoint:
             state_dict = checkpoint['state_dict']
         else:
@@ -454,9 +351,8 @@ class BEiT(BaseModule):
         for key in all_keys:
             if 'relative_position_index' in key:
                 state_dict.pop(key)
-            # In order to keep the center of pos_bias as consistent as
-            # possible after interpolation, and vice versa in the edge
-            # area, the geometric sequence interpolation method is adopted.
+
+
             if 'relative_position_bias_table' in key:
                 rel_pos_bias = state_dict[key]
                 src_num_pos, num_attn_heads = rel_pos_bias.size()
@@ -464,7 +360,7 @@ class BEiT(BaseModule):
                 dst_patch_shape = self.patch_shape
                 if dst_patch_shape[0] != dst_patch_shape[1]:
                     raise NotImplementedError()
-                # Count the number of extra tokens.
+
                 num_extra_tokens = dst_num_pos - (
                     dst_patch_shape[0] * 2 - 1) * (
                         dst_patch_shape[1] * 2 - 1)
@@ -503,10 +399,8 @@ class BEiT(BaseModule):
         elif self.init_cfg is not None:
             super().init_weights()
         else:
-            # We only implement the 'jax_impl' initialization implemented at
-            # https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/vision_transformer.py#L353  # noqa: E501
-            # Copyright 2019 Ross Wightman
-            # Licensed under the Apache License, Version 2.0 (the "License")
+
+
             trunc_normal_(self.cls_token, std=.02)
             for n, m in self.named_modules():
                 if isinstance(m, nn.Linear):
@@ -526,7 +420,7 @@ class BEiT(BaseModule):
 
         x, hw_shape = self.patch_embed(inputs)
 
-        # stole cls_tokens impl from Phil Wang, thanks
+
         cls_tokens = self.cls_token.expand(B, -1, -1)
         x = torch.cat((cls_tokens, x), dim=1)
 
@@ -537,7 +431,7 @@ class BEiT(BaseModule):
                 if self.final_norm:
                     x = self.norm1(x)
             if i in self.out_indices:
-                # Remove class token and reshape token for decoder head
+
                 out = x[:, 1:]
                 B, _, C = out.shape
                 out = out.reshape(B, hw_shape[0], hw_shape[1],

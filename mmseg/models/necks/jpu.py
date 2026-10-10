@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import torch
 import torch.nn as nn
 from mmcv.cnn import ConvModule, DepthwiseSeparableConvModule
@@ -10,35 +9,7 @@ from ..utils import resize
 
 @MODELS.register_module()
 class JPU(BaseModule):
-    """FastFCN: Rethinking Dilated Convolution in the Backbone
-    for Semantic Segmentation.
 
-    This Joint Pyramid Upsampling (JPU) neck is the implementation of
-    `FastFCN <https://arxiv.org/abs/1903.11816>`_.
-
-    Args:
-        in_channels (Tuple[int], optional): The number of input channels
-            for each convolution operations before upsampling.
-            Default: (512, 1024, 2048).
-        mid_channels (int): The number of output channels of JPU.
-            Default: 512.
-        start_level (int): Index of the start input backbone level used to
-            build the feature pyramid. Default: 0.
-        end_level (int): Index of the end input backbone level (exclusive) to
-            build the feature pyramid. Default: -1, which means the last level.
-        dilations (tuple[int]): Dilation rate of each Depthwise
-            Separable ConvModule. Default: (1, 2, 4, 8).
-        align_corners (bool, optional): The align_corners argument of
-            resize operation. Default: False.
-        conv_cfg (dict | None): Config of conv layers.
-            Default: None.
-        norm_cfg (dict | None): Config of norm layers.
-            Default: dict(type='BN').
-        act_cfg (dict): Config of activation layers.
-            Default: dict(type='ReLU').
-        init_cfg (dict or list[dict], optional): Initialization config dict.
-            Default: None.
-    """
 
     def __init__(self,
                  in_channels=(512, 1024, 2048),
@@ -97,7 +68,7 @@ class JPU(BaseModule):
             self.dilation_layers.append(dilation_layer)
 
     def forward(self, inputs):
-        """Forward function."""
+
         assert len(inputs) == len(self.in_channels), 'Length of inputs must \
                                            be the same with self.in_channels!'
 
@@ -122,9 +93,7 @@ class JPU(BaseModule):
 
         outs = []
 
-        # Default: outs[2] is the output of JPU for decoder head, outs[1] is
-        # the feature map from backbone for auxiliary head. Additionally,
-        # outs[0] can also be used for auxiliary head.
+
         for i in range(self.start_level, self.backbone_end_level - 1):
             outs.append(inputs[i])
         outs.append(concat_feat)

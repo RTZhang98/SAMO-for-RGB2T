@@ -1,7 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
-"""Modified from
-https://github.com/JunMa11/SegLoss/blob/master/losses_pytorch/dice_loss.py#L333
-(Apache-2.0 License)"""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -59,26 +55,7 @@ def binary_tversky_loss(pred,
 
 @LOSSES.register_module()
 class TverskyLoss(nn.Module):
-    """TverskyLoss. This loss is proposed in `Tversky loss function for image
-    segmentation using 3D fully convolutional deep networks.
 
-    <https://arxiv.org/abs/1706.05721>`_.
-    Args:
-        smooth (float): A float number to smooth loss, and avoid NaN error.
-            Default: 1.
-        class_weight (list[float] | str, optional): Weight of each class. If in
-            str format, read them from a file. Defaults to None.
-        loss_weight (float, optional): Weight of the loss. Default to 1.0.
-        ignore_index (int | None): The label index to be ignored. Default: 255.
-        alpha(float, in [0, 1]):
-            The coefficient of false positives. Default: 0.3.
-        beta (float, in [0, 1]):
-            The coefficient of false negatives. Default: 0.7.
-            Note: alpha + beta = 1.
-        loss_name (str, optional): Name of the loss item. If you want this loss
-            item to be included into the backward graph, `loss_` must be the
-            prefix of the name. Defaults to 'loss_tversky'.
-    """
 
     def __init__(self,
                  smooth=1,
@@ -124,14 +101,6 @@ class TverskyLoss(nn.Module):
 
     @property
     def loss_name(self):
-        """Loss Name.
 
-        This function must be implemented and will return the name of this
-        loss function. This name will be used to combine different loss items
-        by simple sum operation. In addition, if you want this loss item to be
-        included into the backward graph, `loss_` must be the prefix of the
-        name.
-        Returns:
-            str: The name of this loss item.
-        """
+
         return self._loss_name

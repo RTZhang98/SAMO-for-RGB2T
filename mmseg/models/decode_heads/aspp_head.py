@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import torch
 import torch.nn as nn
 from mmcv.cnn import ConvModule
@@ -9,16 +8,7 @@ from .decode_head import BaseDecodeHead
 
 
 class ASPPModule(nn.ModuleList):
-    """Atrous Spatial Pyramid Pooling (ASPP) Module.
 
-    Args:
-        dilations (tuple[int]): Dilation rate of each layer.
-        in_channels (int): Input channels.
-        channels (int): Channels after modules, before conv_seg.
-        conv_cfg (dict|None): Config of conv layers.
-        norm_cfg (dict|None): Config of norm layers.
-        act_cfg (dict): Config of activation layers.
-    """
 
     def __init__(self, dilations, in_channels, channels, conv_cfg, norm_cfg,
                  act_cfg):
@@ -42,7 +32,7 @@ class ASPPModule(nn.ModuleList):
                     act_cfg=self.act_cfg))
 
     def forward(self, x):
-        """Forward function."""
+
         aspp_outs = []
         for aspp_module in self:
             aspp_outs.append(aspp_module(x))
@@ -52,15 +42,7 @@ class ASPPModule(nn.ModuleList):
 
 @MODELS.register_module()
 class ASPPHead(BaseDecodeHead):
-    """Rethinking Atrous Convolution for Semantic Image Segmentation.
 
-    This head is the implementation of `DeepLabV3
-    <https://arxiv.org/abs/1706.05587>`_.
-
-    Args:
-        dilations (tuple[int]): Dilation rates for ASPP module.
-            Default: (1, 6, 12, 18).
-    """
 
     def __init__(self, dilations=(1, 6, 12, 18), **kwargs):
         super().__init__(**kwargs)
@@ -92,16 +74,8 @@ class ASPPHead(BaseDecodeHead):
             act_cfg=self.act_cfg)
 
     def _forward_feature(self, inputs):
-        """Forward function for feature maps before classifying each pixel with
-        ``self.cls_seg`` fc.
 
-        Args:
-            inputs (list[Tensor]): List of multi-level img features.
 
-        Returns:
-            feats (Tensor): A tensor of shape (batch_size, self.channels,
-                H, W) which is feature map for last layer of decoder head.
-        """
         x = self._transform_inputs(inputs)
         aspp_outs = [
             resize(
@@ -116,7 +90,7 @@ class ASPPHead(BaseDecodeHead):
         return feats
 
     def forward(self, inputs):
-        """Forward function."""
+
         output = self._forward_feature(inputs)
         output = self.cls_seg(output)
         return output

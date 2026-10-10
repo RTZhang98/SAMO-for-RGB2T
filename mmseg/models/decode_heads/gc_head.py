@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import torch
 from mmcv.cnn import ContextBlock
 
@@ -8,18 +7,7 @@ from .fcn_head import FCNHead
 
 @MODELS.register_module()
 class GCHead(FCNHead):
-    """GCNet: Non-local Networks Meet Squeeze-Excitation Networks and Beyond.
 
-    This head is the implementation of `GCNet
-    <https://arxiv.org/abs/1904.11492>`_.
-
-    Args:
-        ratio (float): Multiplier of channels ratio. Default: 1/4.
-        pooling_type (str): The pooling type of context aggregation.
-            Options are 'att', 'avg'. Default: 'avg'.
-        fusion_types (tuple[str]): The fusion type for feature fusion.
-            Options are 'channel_add', 'channel_mul'. Default: ('channel_add',)
-    """
 
     def __init__(self,
                  ratio=1 / 4.,
@@ -37,7 +25,7 @@ class GCHead(FCNHead):
             fusion_types=self.fusion_types)
 
     def forward(self, inputs):
-        """Forward function."""
+
         x = self._transform_inputs(inputs)
         output = self.convs[0](x)
         output = self.gc_block(output)

@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import warnings
 
 import torch
@@ -12,17 +11,7 @@ from mmseg.registry import MODELS
 
 
 class GlobalContextExtractor(nn.Module):
-    """Global Context Extractor for CGNet.
 
-    This class is employed to refine the joint feature of both local feature
-    and surrounding context.
-
-    Args:
-        channel (int): Number of input feature channels.
-        reduction (int): Reductions for global context extractor. Default: 16.
-        with_cp (bool): Use checkpoint or not. Using checkpoint will save some
-            memory while slowing down the training speed. Default: False.
-    """
 
     def __init__(self, channel, reduction=16, with_cp=False):
         super().__init__()
@@ -52,29 +41,7 @@ class GlobalContextExtractor(nn.Module):
 
 
 class ContextGuidedBlock(nn.Module):
-    """Context Guided Block for CGNet.
 
-    This class consists of four components: local feature extractor,
-    surrounding feature extractor, joint feature extractor and global
-    context extractor.
-
-    Args:
-        in_channels (int): Number of input feature channels.
-        out_channels (int): Number of output feature channels.
-        dilation (int): Dilation rate for surrounding context extractor.
-            Default: 2.
-        reduction (int): Reduction for global context extractor. Default: 16.
-        skip_connect (bool): Add input to output or not. Default: True.
-        downsample (bool): Downsample the input to 1/2 or not. Default: False.
-        conv_cfg (dict): Config dict for convolution layer.
-            Default: None, which means using conv2d.
-        norm_cfg (dict): Config dict for normalization layer.
-            Default: dict(type='BN', requires_grad=True).
-        act_cfg (dict): Config dict for activation layer.
-            Default: dict(type='PReLU').
-        with_cp (bool): Use checkpoint or not. Using checkpoint will save some
-            memory while slowing down the training speed. Default: False.
-    """
 
     def __init__(self,
                  in_channels,
@@ -147,12 +114,12 @@ class ContextGuidedBlock(nn.Module):
             loc = self.f_loc(out)
             sur = self.f_sur(out)
 
-            joi_feat = torch.cat([loc, sur], 1)  # the joint feature
+            joi_feat = torch.cat([loc, sur], 1)
             joi_feat = self.bn(joi_feat)
             joi_feat = self.activate(joi_feat)
             if self.downsample:
-                joi_feat = self.bottleneck(joi_feat)  # channel = out_channels
-            # f_glo is employed to refine the joint feature
+                joi_feat = self.bottleneck(joi_feat)
+
             out = self.f_glo(joi_feat)
 
             if self.skip_connect:
@@ -169,7 +136,7 @@ class ContextGuidedBlock(nn.Module):
 
 
 class InputInjection(nn.Module):
-    """Downsampling module for CGNet."""
+
 
     def __init__(self, num_downsampling):
         super().__init__()
@@ -185,36 +152,7 @@ class InputInjection(nn.Module):
 
 @MODELS.register_module()
 class CGNet(BaseModule):
-    """CGNet backbone.
 
-    This backbone is the implementation of `A Light-weight Context Guided
-    Network for Semantic Segmentation <https://arxiv.org/abs/1811.08201>`_.
-
-    Args:
-        in_channels (int): Number of input image channels. Normally 3.
-        num_channels (tuple[int]): Numbers of feature channels at each stages.
-            Default: (32, 64, 128).
-        num_blocks (tuple[int]): Numbers of CG blocks at stage 1 and stage 2.
-            Default: (3, 21).
-        dilations (tuple[int]): Dilation rate for surrounding context
-            extractors at stage 1 and stage 2. Default: (2, 4).
-        reductions (tuple[int]): Reductions for global context extractors at
-            stage 1 and stage 2. Default: (8, 16).
-        conv_cfg (dict): Config dict for convolution layer.
-            Default: None, which means using conv2d.
-        norm_cfg (dict): Config dict for normalization layer.
-            Default: dict(type='BN', requires_grad=True).
-        act_cfg (dict): Config dict for activation layer.
-            Default: dict(type='PReLU').
-        norm_eval (bool): Whether to set norm layers to eval mode, namely,
-            freeze running stats (mean and var). Note: Effect on Batch Norm
-            and its variants only. Default: False.
-        with_cp (bool): Use checkpoint or not. Using checkpoint will save some
-            memory while slowing down the training speed. Default: False.
-        pretrained (str, optional): model pretrained path. Default: None
-        init_cfg (dict or list[dict], optional): Initialization config dict.
-            Default: None
-    """
 
     def __init__(self,
                  in_channels=3,
@@ -284,15 +222,15 @@ class CGNet(BaseModule):
                     act_cfg=act_cfg))
             cur_channels = num_channels[0]
 
-        self.inject_2x = InputInjection(1)  # down-sample for Input, factor=2
-        self.inject_4x = InputInjection(2)  # down-sample for Input, factor=4
+        self.inject_2x = InputInjection(1)
+        self.inject_4x = InputInjection(2)
 
         cur_channels += in_channels
         self.norm_prelu_0 = nn.Sequential(
             build_norm_layer(norm_cfg, cur_channels)[1],
             nn.PReLU(cur_channels))
 
-        # stage 1
+
         self.level1 = nn.ModuleList()
         for i in range(num_blocks[0]):
             self.level1.append(
@@ -305,14 +243,14 @@ class CGNet(BaseModule):
                     conv_cfg=conv_cfg,
                     norm_cfg=norm_cfg,
                     act_cfg=act_cfg,
-                    with_cp=with_cp))  # CG block
+                    with_cp=with_cp))
 
         cur_channels = 2 * num_channels[1] + in_channels
         self.norm_prelu_1 = nn.Sequential(
             build_norm_layer(norm_cfg, cur_channels)[1],
             nn.PReLU(cur_channels))
 
-        # stage 2
+
         self.level2 = nn.ModuleList()
         for i in range(num_blocks[1]):
             self.level2.append(
@@ -325,7 +263,7 @@ class CGNet(BaseModule):
                     conv_cfg=conv_cfg,
                     norm_cfg=norm_cfg,
                     act_cfg=act_cfg,
-                    with_cp=with_cp))  # CG block
+                    with_cp=with_cp))
 
         cur_channels = 2 * num_channels[2]
         self.norm_prelu_2 = nn.Sequential(
@@ -335,7 +273,7 @@ class CGNet(BaseModule):
     def forward(self, x):
         output = []
 
-        # stage 0
+
         inp_2x = self.inject_2x(x)
         inp_4x = self.inject_4x(x)
         for layer in self.stem:
@@ -343,7 +281,7 @@ class CGNet(BaseModule):
         x = self.norm_prelu_0(torch.cat([x, inp_2x], 1))
         output.append(x)
 
-        # stage 1
+
         for i, layer in enumerate(self.level1):
             x = layer(x)
             if i == 0:
@@ -351,7 +289,7 @@ class CGNet(BaseModule):
         x = self.norm_prelu_1(torch.cat([x, down1, inp_4x], 1))
         output.append(x)
 
-        # stage 2
+
         for i, layer in enumerate(self.level2):
             x = layer(x)
             if i == 0:
@@ -362,11 +300,11 @@ class CGNet(BaseModule):
         return output
 
     def train(self, mode=True):
-        """Convert the model into training mode will keeping the normalization
-        layer freezed."""
+
+
         super().train(mode)
         if mode and self.norm_eval:
             for m in self.modules():
-                # trick: eval have effect on BatchNorm only
+
                 if isinstance(m, _BatchNorm):
                     m.eval()

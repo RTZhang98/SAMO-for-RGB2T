@@ -1,12 +1,3 @@
-# Copyright (c) Meta Platforms, Inc. and affiliates.
-#
-# This source code is licensed under the Apache License, Version 2.0
-# found in the LICENSE file in the root directory of this source tree.
-
-# References:
-#   https://github.com/facebookresearch/dino/blob/master/vision_transformer.py
-#   https://github.com/rwightman/pytorch-image-models/tree/master/timm/layers/patch_embed.py
-
 import logging
 import os
 from typing import Callable, List, Any, Tuple, Dict
@@ -59,7 +50,7 @@ class Block(nn.Module):
         ffn_layer: Callable[..., nn.Module] = Mlp,
     ) -> None:
         super().__init__()
-        # print(f"biases: qkv: {qkv_bias}, proj: {proj_bias}, ffn: {ffn_bias}")
+
         self.norm1 = norm_layer(dim)
         self.attn = attn_class(
             dim,
@@ -94,7 +85,7 @@ class Block(nn.Module):
             return self.ls2(self.mlp(self.norm2(x)))
 
         if self.training and self.sample_drop_ratio > 0.1:
-            # the overhead is compensated only for a drop path rate larger than 0.1
+
             x = drop_add_residual_stochastic_depth(
                 x,
                 residual_func=attn_residual_func,
@@ -107,7 +98,7 @@ class Block(nn.Module):
             )
         elif self.training and self.sample_drop_ratio > 0.0:
             x = x + self.drop_path1(attn_residual_func(x))
-            x = x + self.drop_path1(ffn_residual_func(x))  # FIXME: drop_path2
+            x = x + self.drop_path1(ffn_residual_func(x))
         else:
             x = x + attn_residual_func(x)
             x = x + ffn_residual_func(x)
@@ -119,13 +110,13 @@ def drop_add_residual_stochastic_depth(
     residual_func: Callable[[Tensor], Tensor],
     sample_drop_ratio: float = 0.0,
 ) -> Tensor:
-    # 1) extract subset using permutation
+
     b, n, d = x.shape
     sample_subset_size = max(int(b * (1 - sample_drop_ratio)), 1)
     brange = (torch.randperm(b, device=x.device))[:sample_subset_size]
     x_subset = x[brange]
 
-    # 2) apply residual_func to get residual
+
     residual = residual_func(x_subset)
 
     x_flat = x.flatten(1)
@@ -133,7 +124,7 @@ def drop_add_residual_stochastic_depth(
 
     residual_scale_factor = b / sample_subset_size
 
-    # 3) add the residual
+
     x_plus_residual = torch.index_add(x_flat, 0, brange, residual.to(dtype=x.dtype), alpha=residual_scale_factor)
     return x_plus_residual.view_as(x)
 
@@ -162,9 +153,8 @@ attn_bias_cache: Dict[Tuple, Any] = {}
 
 
 def get_attn_bias_and_cat(x_list, branges=None):
-    """
-    this will perform the index select, cat the tensors, and provide the attn_bias from cache
-    """
+
+
     batch_sizes = [b.shape[0] for b in branges] if branges is not None else [x.shape[0] for x in x_list]
     all_shapes = tuple((b, x.shape[1]) for b, x in zip(batch_sizes, x_list))
     if all_shapes not in attn_bias_cache.keys():
@@ -191,16 +181,16 @@ def drop_add_residual_stochastic_depth_list(
     sample_drop_ratio: float = 0.0,
     scaling_vector=None,
 ) -> Tensor:
-    # 1) generate random set of indices for dropping samples in the batch
+
     branges_scales = [get_branges_scales(x, sample_drop_ratio=sample_drop_ratio) for x in x_list]
     branges = [s[0] for s in branges_scales]
     residual_scale_factors = [s[1] for s in branges_scales]
 
-    # 2) get attention bias and index+concat the tensors
+
     attn_bias, x_cat = get_attn_bias_and_cat(x_list, branges)
 
-    # 3) apply residual_func to get residual, and split the result
-    residual_list = attn_bias.split(residual_func(x_cat, attn_bias=attn_bias))  # type: ignore
+
+    residual_list = attn_bias.split(residual_func(x_cat, attn_bias=attn_bias))
 
     outputs = []
     for x, brange, residual, residual_scale_factor in zip(x_list, branges, residual_list, residual_scale_factors):
@@ -210,9 +200,8 @@ def drop_add_residual_stochastic_depth_list(
 
 class NestedTensorBlock(Block):
     def forward_nested(self, x_list: List[Tensor]) -> List[Tensor]:
-        """
-        x_list contains a list of tensors to nest together and run
-        """
+
+
         assert isinstance(self.attn, MemEffAttention)
 
         if self.training and self.sample_drop_ratio > 0.0:

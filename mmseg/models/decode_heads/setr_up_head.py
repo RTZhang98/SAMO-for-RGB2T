@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import torch.nn as nn
 from mmcv.cnn import ConvModule, build_norm_layer
 
@@ -9,21 +8,7 @@ from .decode_head import BaseDecodeHead
 
 @MODELS.register_module()
 class SETRUPHead(BaseDecodeHead):
-    """Naive upsampling head and Progressive upsampling head of SETR.
 
-    Naive or PUP head of `SETR  <https://arxiv.org/pdf/2012.15840.pdf>`_.
-
-    Args:
-        norm_layer (dict): Config dict for input normalization.
-            Default: norm_layer=dict(type='LN', eps=1e-6, requires_grad=True).
-        num_convs (int): Number of decoder convolutions. Default: 1.
-        up_scale (int): The scale factor of interpolate. Default:4.
-        kernel_size (int): The kernel size of convolution when decoding
-            feature information from backbone. Default: 3.
-        init_cfg (dict | list[dict] | None): Initialization config dict.
-            Default: dict(
-                     type='Constant', val=1.0, bias=0, layer='LayerNorm').
-    """
 
     def __init__(self,
                  norm_layer=dict(type='LN', eps=1e-6, requires_grad=True),

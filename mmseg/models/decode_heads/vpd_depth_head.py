@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 from typing import Dict, List, Optional, Sequence, Union
 
 import torch
@@ -16,18 +15,7 @@ from .decode_head import BaseDecodeHead
 
 
 class VPDDepthDecoder(BaseModule):
-    """VPD Depth Decoder class.
 
-    Args:
-        in_channels (int): Number of input channels.
-        out_channels (int): Number of output channels.
-        num_deconv_layers (int): Number of deconvolution layers.
-        num_deconv_filters (List[int]): List of output channels for
-            deconvolution layers.
-        init_cfg (Optional[Union[Dict, List[Dict]]], optional): Configuration
-            for weight initialization. Defaults to Normal for Conv2d and
-            ConvTranspose2d layers.
-    """
 
     def __init__(self,
                  in_channels: int,
@@ -63,7 +51,7 @@ class VPDDepthDecoder(BaseModule):
             scale_factor=2, mode='bilinear', align_corners=False)
 
     def forward(self, x):
-        """Forward pass through the decoder network."""
+
         out = self.deconv_layers(x)
         out = self.conv_layers(out)
 
@@ -73,7 +61,7 @@ class VPDDepthDecoder(BaseModule):
         return out
 
     def _make_deconv_layer(self, num_layers, num_deconv_filters):
-        """Make deconv layers."""
+
 
         layers = []
         in_channels = self.in_channels
@@ -99,29 +87,7 @@ class VPDDepthDecoder(BaseModule):
 
 @MODELS.register_module()
 class VPDDepthHead(BaseDecodeHead):
-    """Depth Prediction Head for VPD.
 
-    .. _`VPD`: https://arxiv.org/abs/2303.02153
-
-    Args:
-        max_depth (float): Maximum depth value. Defaults to 10.0.
-        in_channels (Sequence[int]): Number of input channels for each
-            convolutional layer.
-        embed_dim (int): Dimension of embedding. Defaults to 192.
-        feature_dim (int): Dimension of aggregated feature. Defaults to 1536.
-        num_deconv_layers (int): Number of deconvolution layers in the
-            decoder. Defaults to 3.
-        num_deconv_filters (Sequence[int]): Number of filters for each deconv
-            layer. Defaults to (32, 32, 32).
-        fmap_border (Union[int, Sequence[int]]): Feature map border for
-            cropping. Defaults to 0.
-        align_corners (bool): Flag for align_corners in interpolation.
-            Defaults to False.
-        loss_decode (dict): Configurations for the loss function. Defaults to
-            dict(type='SiLogLoss').
-        init_cfg (dict): Initialization configurations. Defaults to
-            dict(type='TruncNormal', std=0.02, layer=['Conv2d', 'Linear']).
-    """
 
     num_classes = 1
     out_channels = 1
@@ -144,17 +110,17 @@ class VPDDepthHead(BaseDecodeHead):
 
         super(BaseDecodeHead, self).__init__(init_cfg=init_cfg)
 
-        # initialize parameters
+
         self.in_channels = in_channels
         self.max_depth = max_depth
         self.align_corners = align_corners
 
-        # feature map border
+
         if isinstance(fmap_border, int):
             fmap_border = (fmap_border, fmap_border)
         self.fmap_border = fmap_border
 
-        # define network layers
+
         self.conv1 = nn.Sequential(
             nn.Conv2d(in_channels[0], in_channels[0], 3, stride=2, padding=1),
             nn.GroupNorm(16, in_channels[0]),
@@ -182,7 +148,7 @@ class VPDDepthHead(BaseDecodeHead):
             nn.ReLU(inplace=False),
             nn.Conv2d(embed_dim, 1, kernel_size=3, stride=1, padding=1))
 
-        # build loss
+
         if isinstance(loss_decode, dict):
             self.loss_decode = build_loss(loss_decode)
         elif isinstance(loss_decode, (list, tuple)):
@@ -218,18 +184,7 @@ class VPDDepthHead(BaseDecodeHead):
 
     def loss_by_feat(self, pred_depth_map: Tensor,
                      batch_data_samples: SampleList) -> dict:
-        """Compute depth estimation loss.
 
-        Args:
-            pred_depth_map (Tensor): The output from decode head forward
-                function.
-            batch_data_samples (List[:obj:`SegDataSample`]): The seg
-                data samples. It usually includes information such
-                as `metainfo` and `gt_dpeth_map`.
-
-        Returns:
-            dict[str, Tensor]: a dictionary of loss components
-        """
 
         gt_depth_map = self._stack_batch_gt(batch_data_samples)
         loss = dict()

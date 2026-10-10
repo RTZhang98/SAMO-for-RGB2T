@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import threading
 from queue import Queue
 from typing import List, Optional, Tuple
@@ -20,11 +19,7 @@ from .utils import _preprare_data
 
 
 class RSImage:
-    """Remote sensing image class.
 
-    Args:
-        img (str or gdal.Dataset): Image file path or gdal.Dataset.
-    """
 
     def __init__(self, image):
         self.dataset = gdal.Open(image, gdal.GA_ReadOnly) if isinstance(
@@ -42,13 +37,8 @@ class RSImage:
         self.grids = []
 
     def read(self, grid: Optional[List] = None) -> np.ndarray:
-        """Read image data. If grid is None, read the whole image.
 
-        Args:
-            grid (Optional[List], optional): Grid to read. Defaults to None.
-        Returns:
-            np.ndarray: Image data.
-        """
+
         if grid is None:
             return np.einsum('ijk->jki', self.dataset.ReadAsArray())
         assert len(
@@ -59,16 +49,8 @@ class RSImage:
         return np.einsum('ijk->jki', data)
 
     def write(self, data: Optional[np.ndarray], grid: Optional[List] = None):
-        """Write image data.
 
-        Args:
-            grid (Optional[List], optional): Grid to write. Defaults to None.
-            data (Optional[np.ndarray], optional): Data to write.
-                Defaults to None.
 
-        Raises:
-            ValueError: Either grid or data must be provided.
-        """
         if grid is not None:
             assert len(grid) == 8, 'grid must be a list of 8 elements'
             for band in self.band_list:
@@ -96,17 +78,8 @@ class RSImage:
     def create_grids(self,
                      window_size: Tuple[int, int],
                      stride: Tuple[int, int] = (0, 0)):
-        """Create grids for image inference.
 
-        Args:
-            window_size (Tuple[int, int]): the size of the sliding window.
-            stride (Tuple[int, int], optional): the stride of the sliding
-                window. Defaults to (0, 0).
 
-        Raises:
-            AssertionError: window_size must be a tuple of 2 elements.
-            AssertionError: stride must be a tuple of 2 elements.
-        """
         assert len(
             window_size) == 2, 'window_size must be a tuple of 2 elements'
         assert len(stride) == 2, 'stride must be a tuple of 2 elements'
@@ -140,13 +113,7 @@ class RSImage:
 
 
 class RSInferencer:
-    """Remote sensing inference class.
 
-    Args:
-        model (BaseModel): The loaded model.
-        batch_size (int, optional): Batch size. Defaults to 1.
-        thread (int, optional): Number of threads. Defaults to 1.
-    """
 
     def __init__(self, model: BaseModel, batch_size: int = 1, thread: int = 1):
         self.model = model
@@ -163,13 +130,8 @@ class RSInferencer:
                          batch_size: int = 1,
                          thread: int = 1,
                          device: Optional[str] = 'cpu'):
-        """Initialize a segmentor from config file.
 
-        Args:
-            config_path (str): Config file path.
-            checkpoint_path (str): Checkpoint path.
-            batch_size (int, optional): Batch size. Defaults to 1.
-        """
+
         init_default_scope('mmseg')
         cfg = Config.fromfile(config_path)
         model = MODELS.build(cfg.model)
@@ -186,13 +148,8 @@ class RSInferencer:
                    batch_size: int = 1,
                    thread: int = 1,
                    device: Optional[str] = 'cpu'):
-        """Initialize a segmentor from model.
 
-        Args:
-            model (BaseModel): The loaded model.
-            checkpoint_path (Optional[str]): Checkpoint path.
-            batch_size (int, optional): Batch size. Defaults to 1.
-        """
+
         if checkpoint_path is not None:
             load_checkpoint(model, checkpoint_path, map_location='cpu')
         model.to(device)
@@ -202,22 +159,16 @@ class RSInferencer:
              image: RSImage,
              window_size: Tuple[int, int],
              strides: Tuple[int, int] = (0, 0)):
-        """Load image data to read buffer.
 
-        Args:
-            image (RSImage): The image to read.
-            window_size (Tuple[int, int]): The size of the sliding window.
-            strides (Tuple[int, int], optional): The stride of the sliding
-                window. Defaults to (0, 0).
-        """
+
         image.create_grids(window_size, strides)
         for grid in image.grids:
             self.read_buffer.put([grid, image.read(grid=grid)])
         self.read_buffer.put(self.END_FLAG)
 
     def inference(self):
-        """Inference image data from read buffer and put the result to write
-        buffer."""
+
+
         while True:
             item = self.read_buffer.get()
             if item == self.END_FLAG:
@@ -232,13 +183,8 @@ class RSInferencer:
             self.read_buffer.task_done()
 
     def write(self, image: RSImage, output_path: Optional[str] = None):
-        """Write image data from write buffer.
 
-        Args:
-            image (RSImage): The image to write.
-            output_path (Optional[str], optional): The path to save the
-                segmentation map. Defaults to None.
-        """
+
         seg_map = image.create_seg_map(output_path)
         while True:
             item = self.write_buffer.get()
@@ -252,16 +198,8 @@ class RSInferencer:
             window_size: Tuple[int, int],
             strides: Tuple[int, int] = (0, 0),
             output_path: Optional[str] = None):
-        """Run inference with multi-threading.
 
-        Args:
-            image (RSImage): The image to inference.
-            window_size (Tuple[int, int]): The size of the sliding window.
-            strides (Tuple[int, int], optional): The stride of the sliding
-                window. Defaults to (0, 0).
-            output_path (Optional[str], optional): The path to save the
-                segmentation map. Defaults to None.
-        """
+
         read_thread = threading.Thread(
             target=self.read, args=(image, window_size, strides))
         read_thread.start()

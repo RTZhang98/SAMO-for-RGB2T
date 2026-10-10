@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import torch
 from mmcv.cnn import ConvModule
 from mmengine.model.weight_init import constant_init
@@ -7,29 +6,7 @@ from torch.nn import functional as F
 
 
 class SelfAttentionBlock(nn.Module):
-    """General self-attention block/non-local block.
 
-    Please refer to https://arxiv.org/abs/1706.03762 for details about key,
-    query and value.
-
-    Args:
-        key_in_channels (int): Input channels of key feature.
-        query_in_channels (int): Input channels of query feature.
-        channels (int): Output channels of key/query transform.
-        out_channels (int): Output channels.
-        share_key_query (bool): Whether share projection weight between key
-            and query projection.
-        query_downsample (nn.Module): Query downsample module.
-        key_downsample (nn.Module): Key downsample module.
-        key_query_num_convs (int): Number of convs for key/query projection.
-        value_num_convs (int): Number of convs for value projection.
-        matmul_norm (bool): Whether normalize attention map with sqrt of
-            channels
-        with_out (bool): Whether use out projection.
-        conv_cfg (dict|None): Config of conv layers.
-        norm_cfg (dict|None): Config of norm layers.
-        act_cfg (dict|None): Config of activation layers.
-    """
 
     def __init__(self, key_in_channels, query_in_channels, channels,
                  out_channels, share_key_query, query_downsample,
@@ -93,14 +70,14 @@ class SelfAttentionBlock(nn.Module):
         self.init_weights()
 
     def init_weights(self):
-        """Initialize weight of later layer."""
+
         if self.out_project is not None:
             if not isinstance(self.out_project, ConvModule):
                 constant_init(self.out_project, 0)
 
     def build_project(self, in_channels, channels, num_convs, use_conv_module,
                       conv_cfg, norm_cfg, act_cfg):
-        """Build projection layer for key/query/value/out."""
+
         if use_conv_module:
             convs = [
                 ConvModule(
@@ -131,7 +108,7 @@ class SelfAttentionBlock(nn.Module):
         return convs
 
     def forward(self, query_feats, key_feats):
-        """Forward function."""
+
         batch_size = query_feats.size(0)
         query = self.query_project(query_feats)
         if self.query_downsample is not None:

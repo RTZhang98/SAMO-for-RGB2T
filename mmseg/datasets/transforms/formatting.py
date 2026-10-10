@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import warnings
 
 import numpy as np
@@ -12,34 +11,7 @@ from mmseg.structures import SegDataSample
 
 @TRANSFORMS.register_module()
 class PackSegInputs(BaseTransform):
-    """Pack the inputs data for the semantic segmentation.
 
-    The ``img_meta`` item is always populated.  The contents of the
-    ``img_meta`` dictionary depends on ``meta_keys``. By default this includes:
-
-        - ``img_path``: filename of the image
-
-        - ``ori_shape``: original shape of the image as a tuple (h, w, c)
-
-        - ``img_shape``: shape of the image input to the network as a tuple \
-            (h, w, c).  Note that images may be zero padded on the \
-            bottom/right if the batch tensor is larger than this shape.
-
-        - ``pad_shape``: shape of padded images
-
-        - ``scale_factor``: a float indicating the preprocessing scale
-
-        - ``flip``: a boolean indicating if image flip transform was used
-
-        - ``flip_direction``: the flipping direction
-
-    Args:
-        meta_keys (Sequence[str], optional): Meta keys to be packed from
-            ``SegDataSample`` and collected in ``data[img_metas]``.
-            Default: ``('img_path', 'ori_shape',
-            'img_shape', 'pad_shape', 'scale_factor', 'flip',
-            'flip_direction')``
-    """
 
     def __init__(self,
                  meta_keys=('img_path', 'seg_map_path', 'ori_shape',
@@ -48,18 +20,8 @@ class PackSegInputs(BaseTransform):
         self.meta_keys = meta_keys
 
     def transform(self, results: dict) -> dict:
-        """Method to pack the input data.
 
-        Args:
-            results (dict): Result dict from the data pipeline.
 
-        Returns:
-            dict:
-
-            - 'inputs' (obj:`torch.Tensor`): The forward data of models.
-            - 'data_sample' (obj:`SegDataSample`): The annotation info of the
-                sample.
-        """
         packed_results = dict()
         if 'img' in results:
             img = results['img']

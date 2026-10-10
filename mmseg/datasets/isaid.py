@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import mmengine.fileio as fileio
 
 from mmseg.registry import DATASETS
@@ -7,12 +6,7 @@ from .basesegdataset import BaseSegDataset
 
 @DATASETS.register_module()
 class iSAIDDataset(BaseSegDataset):
-    """ iSAID: A Large-scale Dataset for Instance Segmentation in Aerial Images
-    In segmentation map annotation for iSAID dataset, which is included
-    in 16 categories. ``reduce_zero_label`` is fixed to False. The
-    ``img_suffix`` is fixed to '.png' and ``seg_map_suffix`` is fixed to
-    '_manual1.png'.
-    """
+
 
     METAINFO = dict(
         classes=('background', 'ship', 'store_tank', 'baseball_diamond',

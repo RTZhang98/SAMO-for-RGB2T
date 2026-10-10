@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import warnings
 
 import torch.nn as nn
@@ -12,34 +11,7 @@ from ..utils import UpConvBlock, Upsample
 
 
 class BasicConvBlock(nn.Module):
-    """Basic convolutional block for UNet.
 
-    This module consists of several plain convolutional layers.
-
-    Args:
-        in_channels (int): Number of input channels.
-        out_channels (int): Number of output channels.
-        num_convs (int): Number of convolutional layers. Default: 2.
-        stride (int): Whether use stride convolution to downsample
-            the input feature map. If stride=2, it only uses stride convolution
-            in the first convolutional layer to downsample the input feature
-            map. Options are 1 or 2. Default: 1.
-        dilation (int): Whether use dilated convolution to expand the
-            receptive field. Set dilation rate of each convolutional layer and
-            the dilation rate of the first convolutional layer is always 1.
-            Default: 1.
-        with_cp (bool): Use checkpoint or not. Using checkpoint will save some
-            memory while slowing down the training speed. Default: False.
-        conv_cfg (dict | None): Config dict for convolution layer.
-            Default: None.
-        norm_cfg (dict | None): Config dict for normalization layer.
-            Default: dict(type='BN').
-        act_cfg (dict | None): Config dict for activation layer in ConvModule.
-            Default: dict(type='ReLU').
-        dcn (bool): Use deformable convolution in convolutional layer or not.
-            Default: None.
-        plugins (dict): plugins for convolutional layers. Default: None.
-    """
 
     def __init__(self,
                  in_channels,
@@ -75,7 +47,7 @@ class BasicConvBlock(nn.Module):
         self.convs = nn.Sequential(*convs)
 
     def forward(self, x):
-        """Forward function."""
+
 
         if self.with_cp and x.requires_grad:
             out = cp.checkpoint(self.convs, x)
@@ -86,22 +58,7 @@ class BasicConvBlock(nn.Module):
 
 @MODELS.register_module()
 class DeconvModule(nn.Module):
-    """Deconvolution upsample module in decoder for UNet (2X upsample).
 
-    This module uses deconvolution to upsample feature map in the decoder
-    of UNet.
-
-    Args:
-        in_channels (int): Number of input channels.
-        out_channels (int): Number of output channels.
-        with_cp (bool): Use checkpoint or not. Using checkpoint will save some
-            memory while slowing down the training speed. Default: False.
-        norm_cfg (dict | None): Config dict for normalization layer.
-            Default: dict(type='BN').
-        act_cfg (dict | None): Config dict for activation layer in ConvModule.
-            Default: dict(type='ReLU').
-        kernel_size (int): Kernel size of the convolutional layer. Default: 4.
-    """
 
     def __init__(self,
                  in_channels,
@@ -136,7 +93,7 @@ class DeconvModule(nn.Module):
         self.deconv_upsamping = nn.Sequential(deconv, norm, activate)
 
     def forward(self, x):
-        """Forward function."""
+
 
         if self.with_cp and x.requires_grad:
             out = cp.checkpoint(self.deconv_upsamping, x)
@@ -147,35 +104,7 @@ class DeconvModule(nn.Module):
 
 @MODELS.register_module()
 class InterpConv(nn.Module):
-    """Interpolation upsample module in decoder for UNet.
 
-    This module uses interpolation to upsample feature map in the decoder
-    of UNet. It consists of one interpolation upsample layer and one
-    convolutional layer. It can be one interpolation upsample layer followed
-    by one convolutional layer (conv_first=False) or one convolutional layer
-    followed by one interpolation upsample layer (conv_first=True).
-
-    Args:
-        in_channels (int): Number of input channels.
-        out_channels (int): Number of output channels.
-        with_cp (bool): Use checkpoint or not. Using checkpoint will save some
-            memory while slowing down the training speed. Default: False.
-        norm_cfg (dict | None): Config dict for normalization layer.
-            Default: dict(type='BN').
-        act_cfg (dict | None): Config dict for activation layer in ConvModule.
-            Default: dict(type='ReLU').
-        conv_cfg (dict | None): Config dict for convolution layer.
-            Default: None.
-        conv_first (bool): Whether convolutional layer or interpolation
-            upsample layer first. Default: False. It means interpolation
-            upsample layer followed by one convolutional layer.
-        kernel_size (int): Kernel size of the convolutional layer. Default: 1.
-        stride (int): Stride of the convolutional layer. Default: 1.
-        padding (int): Padding of the convolutional layer. Default: 1.
-        upsample_cfg (dict): Interpolation config of the upsample layer.
-            Default: dict(
-                scale_factor=2, mode='bilinear', align_corners=False).
-    """
 
     def __init__(self,
                  in_channels,
@@ -210,7 +139,7 @@ class InterpConv(nn.Module):
             self.interp_upsample = nn.Sequential(upsample, conv)
 
     def forward(self, x):
-        """Forward function."""
+
 
         if self.with_cp and x.requires_grad:
             out = cp.checkpoint(self.interp_upsample, x)
@@ -221,62 +150,7 @@ class InterpConv(nn.Module):
 
 @MODELS.register_module()
 class UNet(BaseModule):
-    """UNet backbone.
 
-    This backbone is the implementation of `U-Net: Convolutional Networks
-    for Biomedical Image Segmentation <https://arxiv.org/abs/1505.04597>`_.
-
-    Args:
-        in_channels (int): Number of input image channels. Default" 3.
-        base_channels (int): Number of base channels of each stage.
-            The output channels of the first stage. Default: 64.
-        num_stages (int): Number of stages in encoder, normally 5. Default: 5.
-        strides (Sequence[int 1 | 2]): Strides of each stage in encoder.
-            len(strides) is equal to num_stages. Normally the stride of the
-            first stage in encoder is 1. If strides[i]=2, it uses stride
-            convolution to downsample in the correspondence encoder stage.
-            Default: (1, 1, 1, 1, 1).
-        enc_num_convs (Sequence[int]): Number of convolutional layers in the
-            convolution block of the correspondence encoder stage.
-            Default: (2, 2, 2, 2, 2).
-        dec_num_convs (Sequence[int]): Number of convolutional layers in the
-            convolution block of the correspondence decoder stage.
-            Default: (2, 2, 2, 2).
-        downsamples (Sequence[int]): Whether use MaxPool to downsample the
-            feature map after the first stage of encoder
-            (stages: [1, num_stages)). If the correspondence encoder stage use
-            stride convolution (strides[i]=2), it will never use MaxPool to
-            downsample, even downsamples[i-1]=True.
-            Default: (True, True, True, True).
-        enc_dilations (Sequence[int]): Dilation rate of each stage in encoder.
-            Default: (1, 1, 1, 1, 1).
-        dec_dilations (Sequence[int]): Dilation rate of each stage in decoder.
-            Default: (1, 1, 1, 1).
-        with_cp (bool): Use checkpoint or not. Using checkpoint will save some
-            memory while slowing down the training speed. Default: False.
-        conv_cfg (dict | None): Config dict for convolution layer.
-            Default: None.
-        norm_cfg (dict | None): Config dict for normalization layer.
-            Default: dict(type='BN').
-        act_cfg (dict | None): Config dict for activation layer in ConvModule.
-            Default: dict(type='ReLU').
-        upsample_cfg (dict): The upsample config of the upsample module in
-            decoder. Default: dict(type='InterpConv').
-        norm_eval (bool): Whether to set norm layers to eval mode, namely,
-            freeze running stats (mean and var). Note: Effect on Batch Norm
-            and its variants only. Default: False.
-        dcn (bool): Use deformable convolution in convolutional layer or not.
-            Default: None.
-        plugins (dict): plugins for convolutional layers. Default: None.
-        pretrained (str, optional): model pretrained path. Default: None
-        init_cfg (dict or list[dict], optional): Initialization config dict.
-            Default: None
-
-    Notice:
-        The input image size should be divisible by the whole downsample rate
-        of the encoder. More detail of the whole downsample rate can be found
-        in UNet._check_input_divisible.
-    """
 
     def __init__(self,
                  in_channels=3,
@@ -413,12 +287,12 @@ class UNet(BaseModule):
         return dec_outs
 
     def train(self, mode=True):
-        """Convert the model into training mode while keep normalization layer
-        freezed."""
+
+
         super().train(mode)
         if mode and self.norm_eval:
             for m in self.modules():
-                # trick: eval have effect on BatchNorm only
+
                 if isinstance(m, _BatchNorm):
                     m.eval()
 

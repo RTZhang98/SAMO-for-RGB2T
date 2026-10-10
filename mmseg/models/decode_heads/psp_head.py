@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import torch
 import torch.nn as nn
 from mmcv.cnn import ConvModule
@@ -9,18 +8,7 @@ from .decode_head import BaseDecodeHead
 
 
 class PPM(nn.ModuleList):
-    """Pooling Pyramid Module used in PSPNet.
 
-    Args:
-        pool_scales (tuple[int]): Pooling scales used in Pooling Pyramid
-            Module.
-        in_channels (int): Input channels.
-        channels (int): Channels after modules, before conv_seg.
-        conv_cfg (dict|None): Config of conv layers.
-        norm_cfg (dict|None): Config of norm layers.
-        act_cfg (dict): Config of activation layers.
-        align_corners (bool): align_corners argument of F.interpolate.
-    """
 
     def __init__(self, pool_scales, in_channels, channels, conv_cfg, norm_cfg,
                  act_cfg, align_corners, **kwargs):
@@ -46,7 +34,7 @@ class PPM(nn.ModuleList):
                         **kwargs)))
 
     def forward(self, x):
-        """Forward function."""
+
         ppm_outs = []
         for ppm in self:
             ppm_out = ppm(x)
@@ -61,15 +49,7 @@ class PPM(nn.ModuleList):
 
 @MODELS.register_module()
 class PSPHead(BaseDecodeHead):
-    """Pyramid Scene Parsing Network.
 
-    This head is the implementation of
-    `PSPNet <https://arxiv.org/abs/1612.01105>`_.
-
-    Args:
-        pool_scales (tuple[int]): Pooling scales used in Pooling Pyramid
-            Module. Default: (1, 2, 3, 6).
-    """
 
     def __init__(self, pool_scales=(1, 2, 3, 6), **kwargs):
         super().__init__(**kwargs)
@@ -93,16 +73,8 @@ class PSPHead(BaseDecodeHead):
             act_cfg=self.act_cfg)
 
     def _forward_feature(self, inputs):
-        """Forward function for feature maps before classifying each pixel with
-        ``self.cls_seg`` fc.
 
-        Args:
-            inputs (list[Tensor]): List of multi-level img features.
 
-        Returns:
-            feats (Tensor): A tensor of shape (batch_size, self.channels,
-                H, W) which is feature map for last layer of decoder head.
-        """
         x = self._transform_inputs(inputs)
         psp_outs = [x]
         psp_outs.extend(self.psp_modules(x))
@@ -111,7 +83,7 @@ class PSPHead(BaseDecodeHead):
         return feats
 
     def forward(self, inputs):
-        """Forward function."""
+
         output = self._forward_feature(inputs)
         output = self.cls_seg(output)
         return output

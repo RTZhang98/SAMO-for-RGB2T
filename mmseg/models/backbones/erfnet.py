@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 import torch
 import torch.nn as nn
 from mmcv.cnn import build_activation_layer, build_conv_layer, build_norm_layer
@@ -9,24 +8,7 @@ from ..utils import resize
 
 
 class DownsamplerBlock(BaseModule):
-    """Downsampler block of ERFNet.
 
-    This module is a little different from basical ConvModule.
-    The features from Conv and MaxPool layers are
-    concatenated before BatchNorm.
-
-    Args:
-        in_channels (int): Number of input channels.
-        out_channels (int): Number of output channels.
-        conv_cfg (dict | None): Config of conv layers.
-            Default: None.
-        norm_cfg (dict | None): Config of norm layers.
-            Default: dict(type='BN').
-        act_cfg (dict): Config of activation layers.
-            Default: dict(type='ReLU').
-        init_cfg (dict or list[dict], optional): Initialization config dict.
-            Default: None.
-    """
 
     def __init__(self,
                  in_channels,
@@ -66,25 +48,7 @@ class DownsamplerBlock(BaseModule):
 
 
 class NonBottleneck1d(BaseModule):
-    """Non-bottleneck block of ERFNet.
 
-    Args:
-        channels (int): Number of channels in Non-bottleneck block.
-        drop_rate (float): Probability of an element to be zeroed.
-            Default 0.
-        dilation (int): Dilation rate for last two conv layers.
-            Default 1.
-        num_conv_layer (int): Number of 3x1 and 1x3 convolution layers.
-            Default 2.
-        conv_cfg (dict | None): Config of conv layers.
-            Default: None.
-        norm_cfg (dict | None): Config of norm layers.
-            Default: dict(type='BN').
-        act_cfg (dict): Config of activation layers.
-            Default: dict(type='ReLU').
-        init_cfg (dict or list[dict], optional): Initialization config dict.
-            Default: None.
-    """
 
     def __init__(self,
                  channels,
@@ -146,20 +110,7 @@ class NonBottleneck1d(BaseModule):
 
 
 class UpsamplerBlock(BaseModule):
-    """Upsampler block of ERFNet.
 
-    Args:
-        in_channels (int): Number of input channels.
-        out_channels (int): Number of output channels.
-        conv_cfg (dict | None): Config of conv layers.
-            Default: None.
-        norm_cfg (dict | None): Config of norm layers.
-            Default: dict(type='BN').
-        act_cfg (dict): Config of activation layers.
-            Default: dict(type='ReLU').
-        init_cfg (dict or list[dict], optional): Initialization config dict.
-            Default: None.
-    """
 
     def __init__(self,
                  in_channels,
@@ -193,39 +144,7 @@ class UpsamplerBlock(BaseModule):
 
 @MODELS.register_module()
 class ERFNet(BaseModule):
-    """ERFNet backbone.
 
-    This backbone is the implementation of `ERFNet: Efficient Residual
-    Factorized ConvNet for Real-time SemanticSegmentation
-    <https://ieeexplore.ieee.org/document/8063438>`_.
-
-    Args:
-        in_channels (int): The number of channels of input
-            image. Default: 3.
-        enc_downsample_channels (Tuple[int]): Size of channel
-            numbers of various Downsampler block in encoder.
-            Default: (16, 64, 128).
-        enc_stage_non_bottlenecks (Tuple[int]): Number of stages of
-            Non-bottleneck block in encoder.
-            Default: (5, 8).
-        enc_non_bottleneck_dilations (Tuple[int]): Dilation rate of each
-            stage of Non-bottleneck block of encoder.
-            Default: (2, 4, 8, 16).
-        enc_non_bottleneck_channels (Tuple[int]): Size of channel
-            numbers of various Non-bottleneck block in encoder.
-            Default: (64, 128).
-        dec_upsample_channels (Tuple[int]): Size of channel numbers of
-            various Deconvolution block in decoder.
-            Default: (64, 16).
-        dec_stages_non_bottleneck (Tuple[int]): Number of stages of
-            Non-bottleneck block in decoder.
-            Default: (2, 2).
-        dec_non_bottleneck_channels (Tuple[int]): Size of channel
-            numbers of various Non-bottleneck block in decoder.
-            Default: (64, 16).
-        drop_rate (float): Probability of an element to be zeroed.
-            Default 0.1.
-    """
 
     def __init__(self,
                  in_channels=3,
@@ -292,7 +211,7 @@ class ERFNet(BaseModule):
             self.encoder.append(
                 DownsamplerBlock(enc_downsample_channels[i],
                                  enc_downsample_channels[i + 1]))
-            # Last part of encoder is some dilated NonBottleneck1d blocks.
+
             if i == len(enc_downsample_channels) - 2:
                 iteration_times = int(enc_stage_non_bottlenecks[-1] /
                                       len(enc_non_bottleneck_dilations))

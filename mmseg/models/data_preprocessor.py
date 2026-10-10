@@ -1,4 +1,3 @@
-# Copyright (c) OpenMMLab. All rights reserved.
 from numbers import Number
 from typing import Any, Dict, List, Optional, Sequence
 
@@ -11,47 +10,7 @@ from mmseg.utils import stack_batch
 
 @MODELS.register_module()
 class SegDataPreProcessor(BaseDataPreprocessor):
-    """Image pre-processor for segmentation tasks.
 
-    Comparing with the :class:`mmengine.ImgDataPreprocessor`,
-
-    1. It won't do normalization if ``mean`` is not specified.
-    2. It does normalization and color space conversion after stacking batch.
-    3. It supports batch augmentations like mixup and cutmix.
-
-
-    It provides the data pre-processing as follows
-
-    - Collate and move data to the target device.
-    - Pad inputs to the input size with defined ``pad_val``, and pad seg map
-        with defined ``seg_pad_val``.
-    - Stack inputs to batch_inputs.
-    - Convert inputs from bgr to rgb if the shape of input is (3, H, W).
-    - Normalize image with defined std and mean.
-    - Do batch augmentations like Mixup and Cutmix during training.
-
-    Args:
-        mean (Sequence[Number], optional): The pixel mean of R, G, B channels.
-            Defaults to None.
-        std (Sequence[Number], optional): The pixel standard deviation of
-            R, G, B channels. Defaults to None.
-        size (tuple, optional): Fixed padding size.
-        size_divisor (int, optional): The divisor of padded size.
-        pad_val (float, optional): Padding value. Default: 0.
-        seg_pad_val (float, optional): Padding value of segmentation map.
-            Default: 255.
-        padding_mode (str): Type of padding. Default: constant.
-            - constant: pads with a constant value, this value is specified
-              with pad_val.
-        bgr_to_rgb (bool): whether to convert image from BGR to RGB.
-            Defaults to False.
-        rgb_to_bgr (bool): whether to convert image from RGB to RGB.
-            Defaults to False.
-        batch_augments (list[dict], optional): Batch-level augmentations
-        test_cfg (dict, optional): The padding size config in testing, if not
-            specify, will use `size` and `size_divisor` params as default.
-            Defaults to None, only supports keys `size` or `size_divisor`.
-    """
 
     def __init__(
         self,
@@ -80,7 +39,7 @@ class SegDataPreProcessor(BaseDataPreprocessor):
             assert std is not None, 'To enable the normalization in ' \
                                     'preprocessing, please specify both ' \
                                     '`mean` and `std`.'
-            # Enable the normalization in preprocessing.
+
             self._enable_normalize = True
             self.register_buffer('mean',
                                  torch.tensor(mean).view(-1, 1, 1), False)
@@ -89,27 +48,19 @@ class SegDataPreProcessor(BaseDataPreprocessor):
         else:
             self._enable_normalize = False
 
-        # TODO: support batch augmentations.
+
         self.batch_augments = batch_augments
 
-        # Support different padding methods in testing
+
         self.test_cfg = test_cfg
 
     def forward(self, data: dict, training: bool = False) -> Dict[str, Any]:
-        """Perform normalization、padding and bgr2rgb conversion based on
-        ``BaseDataPreprocessor``.
 
-        Args:
-            data (dict): data sampled from dataloader.
-            training (bool): Whether to enable training time augmentation.
 
-        Returns:
-            Dict: Data in the same format as the model input.
-        """
-        data = self.cast_data(data)  # type: ignore
+        data = self.cast_data(data)
         inputs = data['inputs']
         data_samples = data.get('data_samples', None)
-        # TODO: whether normalize should be after stack_batch
+
         if self.channel_conversion and inputs[0].size(0) == 3:
             inputs = [_input[[2, 1, 0], ...] for _input in inputs]
 
@@ -135,7 +86,7 @@ class SegDataPreProcessor(BaseDataPreprocessor):
             img_size = inputs[0].shape[1:]
             assert all(input_.shape[1:] == img_size for input_ in inputs),  \
                 'The image size in a batch should be the same.'
-            # pad images when testing
+
             if self.test_cfg:
                 inputs, padded_samples = stack_batch(
                     inputs=inputs,
@@ -153,47 +104,7 @@ class SegDataPreProcessor(BaseDataPreprocessor):
 
 @MODELS.register_module()
 class CustomizeSegDataPreProcessor(BaseDataPreprocessor):
-    """Image pre-processor for segmentation tasks.
 
-    Comparing with the :class:`mmengine.ImgDataPreprocessor`,
-
-    1. It won't do normalization if ``mean`` is not specified.
-    2. It does normalization and color space conversion after stacking batch.
-    3. It supports batch augmentations like mixup and cutmix.
-
-
-    It provides the data pre-processing as follows
-
-    - Collate and move data to the target device.
-    - Pad inputs to the input size with defined ``pad_val``, and pad seg map
-        with defined ``seg_pad_val``.
-    - Stack inputs to batch_inputs.
-    - Convert inputs from bgr to rgb if the shape of input is (3, H, W).
-    - Normalize image with defined std and mean.
-    - Do batch augmentations like Mixup and Cutmix during training.
-
-    Args:
-        mean (Sequence[Number], optional): The pixel mean of R, G, B channels.
-            Defaults to None.
-        std (Sequence[Number], optional): The pixel standard deviation of
-            R, G, B channels. Defaults to None.
-        size (tuple, optional): Fixed padding size.
-        size_divisor (int, optional): The divisor of padded size.
-        pad_val (float, optional): Padding value. Default: 0.
-        seg_pad_val (float, optional): Padding value of segmentation map.
-            Default: 255.
-        padding_mode (str): Type of padding. Default: constant.
-            - constant: pads with a constant value, this value is specified
-              with pad_val.
-        bgr_to_rgb (bool): whether to convert image from BGR to RGB.
-            Defaults to False.
-        rgb_to_bgr (bool): whether to convert image from RGB to RGB.
-            Defaults to False.
-        batch_augments (list[dict], optional): Batch-level augmentations
-        test_cfg (dict, optional): The padding size config in testing, if not
-            specify, will use `size` and `size_divisor` params as default.
-            Defaults to None, only supports keys `size` or `size_divisor`.
-    """
 
     def __init__(
         self,
@@ -222,7 +133,7 @@ class CustomizeSegDataPreProcessor(BaseDataPreprocessor):
             assert std is not None, 'To enable the normalization in ' \
                                     'preprocessing, please specify both ' \
                                     '`mean` and `std`.'
-            # Enable the normalization in preprocessing.
+
             self._enable_normalize = True
             self.register_buffer('mean',
                                  torch.tensor(mean).view(-1, 1, 1), False)
@@ -231,28 +142,20 @@ class CustomizeSegDataPreProcessor(BaseDataPreprocessor):
         else:
             self._enable_normalize = False
 
-        # TODO: support batch augmentations.
+
         self.batch_augments = batch_augments
 
-        # Support different padding methods in testing
+
         self.test_cfg = test_cfg
 
 
     def forward(self, data: dict, training: bool = False) -> Dict[str, Any]:
-        """Perform normalization、padding and bgr2rgb conversion based on
-        ``BaseDataPreprocessor``.
 
-        Args:
-            data (dict): data sampled from dataloader.
-            training (bool): Whether to enable training time augmentation.
 
-        Returns:
-            Dict: Data in the same format as the model input.
-        """
-        data = self.cast_data(data)  # type: ignore
+        data = self.cast_data(data)
         inputs = data['inputs']
         data_samples = data.get('data_samples', None)
-        # TODO: whether normalize should be after stack_batch
+
         if self.channel_conversion:
             if inputs[0].shape[0] == 12:
                 inputs = [_input[[2, 1, 0, 5, 4, 3, 8, 7, 6, 11, 10, 9], ...] for _input in inputs]
@@ -288,7 +191,7 @@ class CustomizeSegDataPreProcessor(BaseDataPreprocessor):
             assert len(inputs) == 1, (
                 'Batch inference is not support currently, '
                 'as the image size might be different in a batch')
-            # pad images when testing
+
             if self.test_cfg:
                 inputs, padded_samples = stack_batch(
                     inputs=inputs,
@@ -302,4 +205,3 @@ class CustomizeSegDataPreProcessor(BaseDataPreprocessor):
                 inputs = torch.stack(inputs, dim=0)
 
         return dict(inputs=inputs, data_samples=data_samples)
-

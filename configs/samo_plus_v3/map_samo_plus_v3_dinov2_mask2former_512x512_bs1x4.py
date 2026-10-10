@@ -1,5 +1,3 @@
-"""Mapillary-source SAMO+ v3 with label-anchored semantic prototypes."""
-
 _base_ = [
     "../_base_/datasets/dg_map2thermal_512x512.py",
     "../_base_/default_runtime.py",
